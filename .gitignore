@@ -1,0 +1,5 @@
+# AI assisted development
+.venv/
+__pycache__/
+*.pyc
+*Zone.Identifier
