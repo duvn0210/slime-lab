@@ -1,4 +1,15 @@
-"""Estación 5: reporte de control de calidad."""
+"""
+screens/result_station.py — estación RESULT (la nota).
+
+Para qué sirve:
+    Solo muestra state.last_report. No se puede volver a BUILD/MIX:
+    main.go lo bloquea. Nuevo Pedido llama app.next_order().
+
+Conectado con:
+    - game_state.last_report (lo llenó deliver)
+    - physics.calificacion ya viene en el dict
+    - assets_loader.draw_customer con mood sad/ok/happy según el total
+"""
 
 from __future__ import annotations
 
@@ -59,6 +70,7 @@ class ResultStation(BaseScreen):
         self.assets.blit_background(surface)
         order = self.state.order
         report = self.state.last_report
+        # <70 triste, 70–89 la sonrisa del PNG, ≥90 sonrisa extra (overlay).
         mood = "ok"
         if report:
             if report["total"] >= GRADE_EXCELLENT:

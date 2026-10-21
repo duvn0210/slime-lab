@@ -1,4 +1,25 @@
-"""Clase base de las estaciones y controles compartidos."""
+"""
+screens/base_screen.py — padre de las 5 estaciones + helpers de dibujo.
+
+Para qué sirve:
+    BaseScreen es lo que “conecta” cada interfaz con el resto del juego.
+    Toda estación hereda de aquí y recibe la app (main.SlimeLab). Por eso
+    self.state, self.physics y self.assets funcionan igual en ORDER o MIX.
+
+    También hay funciones sueltas: blit (texto), panel, draw_reminder
+    (cinta del pedido en BUILD/MIX/TOP).
+
+Conectado con:
+    - main.py importa blit, panel, draw_button, wrap_text
+    - cada archivo de screens/*.py importa BaseScreen
+    - draw_reminder lee state.order y settings.VISCOSITY_BANDS
+
+Métodos que cada estación puede redefinir:
+    handle_event  clics/teclas de ESA pantalla
+    update(dt)    MIX y RESULT lo usan; las otras no
+    draw          pintar
+    on_enter      al cambiar de estación (BUILD sincroniza sliders)
+"""
 
 from __future__ import annotations
 
@@ -102,6 +123,7 @@ def draw_reference_card(surface, font, title: str) -> pygame.Rect:
 
 
 def draw_reminder(surface, font, order, service_time: float) -> None:
+    """Barra superior con el pedido y el reloj. El reloj se pone naranja tras 120 s."""
     band = VISCOSITY_BANDS[order.viscosity]
     rect = pygame.Rect(16, TOP_BAR_H + 6, WIDTH - 32, 34)
     panel(surface, rect, (255, 255, 255, 230), None, radius=12)
@@ -192,6 +214,8 @@ def liquid_in_glass(surface, rect, color, fill, time, mixing=False) -> None:
 
 
 class BaseScreen:
+    """Plantilla. `app` es el SlimeLab de main.py (una sola instancia)."""
+
     def __init__(self, app) -> None:
         self.app = app
 

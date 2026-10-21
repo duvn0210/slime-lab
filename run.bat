@@ -1,4 +1,6 @@
 @echo off
+REM run.bat — juega Slime Lab en Windows. Hay que estar EN la carpeta slime-lab.
+REM Crea .venv con Python 3.12 si no existe. No uses el comando "python" a secas (puede ser 3.15).
 cd /d "%~dp0"
 if not exist ".venv\Scripts\python.exe" (
   echo Creando entorno con Python 3.12...

@@ -1,4 +1,17 @@
-"""Estación 3: agitador, curvas reológicas y parada de la mezcla."""
+"""
+screens/mix_station.py — estación MIX (la que más pregunta el profesor).
+
+Para qué sirve:
+    Mientras confirmed y no locked, cada frame avanza mix_time y calcula μ(t).
+    Gráfica izquierda: viscosidad vs tiempo (verde = pedido, punteada = μ_eq).
+    Gráfica derecha: esfuerzo de corte τ(γ) — no es la nota.
+    Detener Mezcla (o Espacio, en main) guarda achieved_mu.
+
+Conectado con:
+    - physics.viscosidad_en_tiempo, estado_reologico, curva_esfuerzo
+    - game_state.push_sample / lock_mix / reset_mix
+    - ui_components.draw_chart, Beaker, ProgressBar
+"""
 
 from __future__ import annotations
 
@@ -27,6 +40,7 @@ class MixStation(BaseScreen):
             self.toggle_lock()
 
     def toggle_lock(self) -> None:
+        """Detener fija μ. Si ya estaba fija, Reiniciar mezcla borra el historial."""
         recipe = self.state.recipe
         if not recipe.confirmed:
             self.app.notify("Confirma la formulación en BUILD antes de mezclar.")
@@ -39,6 +53,7 @@ class MixStation(BaseScreen):
         self.app.notify(f"Viscosidad fijada en {self.state.achieved_mu:.2f} Pa·s.")
 
     def update(self, dt: float) -> None:
+        # main llama update 60 veces/s. Aquí es donde μ sube de verdad.
         recipe = self.state.recipe
         spinning = recipe.confirmed and not self.state.mix_locked
         if spinning:
@@ -58,6 +73,7 @@ class MixStation(BaseScreen):
         band = VISCOSITY_BANDS[self.state.order.viscosity]
         mu_now = self.state.current_mu
         y_max = max(band["high"] * 1.25, eq["mu"] * 1.15, mu_now * 1.1, 1.0)
+        # Izquierda: μ(t). Verde = pedido. Punteada = tope de ESTA receta.
         draw_chart(
             surface,
             self.left_chart,
@@ -70,6 +86,7 @@ class MixStation(BaseScreen):
             band=(band["low"], band["high"]),
             dashed=eq["mu"],
         )
+        # Derecha: τ vs γ. No dice si ganaste; es la ley de potencia de la receta.
         curve = self.physics.curva_esfuerzo(recipe.polymer, recipe.agent)
         draw_chart(
             surface,
@@ -97,6 +114,7 @@ class MixStation(BaseScreen):
             viscosity=mu_now if mu_now > 0 else eq["mu"],
             rpm=recipe.rpm,
         )
+        # Barra = μ actual / μ equilibrio. Llena no significa “ganaste”.
         ratio = 0.0 if eq["mu"] <= 0 else max(0.0, min(1.0, mu_now / eq["mu"]))
         self.progress.draw(surface, ratio, self.assets.sm, "Avance al equilibrio")
         if self.state.mix_locked:

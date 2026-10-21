@@ -1,4 +1,5 @@
 #!/bin/bash
+# run.sh — Ubuntu/WSL: corre el juego con el Python del .venv (no el del sistema).
 cd "$(dirname "$0")"
 if [ ! -x .venv/bin/python ]; then
   echo "Falta el entorno. Desde esta carpeta:"

@@ -1,4 +1,20 @@
-"""Constantes globales de Slime Lab: ventana, paleta, rangos y bandas de calidad."""
+"""
+settings.py — todos los números “mágicos” del juego en un solo sitio.
+
+Para qué sirve:
+    Tamaño de ventana, rangos de sliders, constantes de la física SET B,
+    bandas de viscosidad, paleta de colores, textos de estaciones.
+    Si el profesor pregunta “¿de dónde salen 4.80–8.80 Pa·s?”, la respuesta es
+    VISCOSITY_BANDS aquí. No hay que buscar números sueltos en las pantallas.
+
+Conectado con:
+    - physics_engine.py  (usa C_BASE, K_*, MIX_TAU_*, bandas, puntaje)
+    - game_state.py      (colores, adornos, bandas para etiquetas)
+    - main.py y screens/ (WIDTH, HEIGHT, FPS, paleta C, STATION_ORDER)
+    - ui_components.py   (colores C)
+
+No calcula nada: solo guarda constantes.
+"""
 
 # Resolución de pantalla a la que se escala el fondo.
 WIDTH = 1024
@@ -48,14 +64,15 @@ VISCOSITY_BANDS = {
     "alta": {"label": "Alta", "low": 4.80, "high": 8.80, "center": 6.30},
 }
 
+# Reloj de servicio: 2 min de gracia, luego -2 pts cada 8 s (tope -16). No se ve en el ticket QC.
 TIME_GRACE_S = 120.0
 TIME_STEP_S = 8.0
 TIME_PENALTY_STEP = 2
 TIME_PENALTY_MAX = 16
 
-GRADE_EXCELLENT = 90
+GRADE_EXCELLENT = 90  # cara feliz + confeti
 GRADE_GOOD = 70
-COIN_FACTOR = 1.5
+COIN_FACTOR = 1.5  # monedas = round(total * 1.5)
 
 # Paleta tomada de los mockups del laboratorio.
 C = {
@@ -106,6 +123,7 @@ DECORATIONS = {
     "lid": "Tapa personalizada",
 }
 
+# RESULT no está aquí: no se navega con las flechas como una estación más.
 STATION_ORDER = ("order", "build", "mix", "top")
 
 STATION_META = {

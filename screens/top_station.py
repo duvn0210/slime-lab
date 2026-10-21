@@ -1,4 +1,16 @@
-"""Estación 4: decoración del slime y entrega del pedido."""
+"""
+screens/top_station.py — estación TOP (adornos y entrega).
+
+Para qué sirve:
+    Clic en una herramienta = pon/quita. Arrastrar al vaso = poner.
+    Entregar Pedido exige: confirmed + mix_locked + color. Entonces
+    state.deliver(physics) y saltamos a RESULT (main.current).
+
+Conectado con:
+    - game_state.applied y deliver
+    - physics.calcular_puntuaciones (indirecto, vía deliver)
+    - order.decorations para marcar “pedido” en la herramienta
+"""
 
 from __future__ import annotations
 
@@ -68,6 +80,7 @@ class TopStation(BaseScreen):
             self.drag = None
 
     def _deliver(self) -> None:
+        """Único lugar que pasa de TOP a RESULT. Si falta un paso, toast y no entrega."""
         if not self.state.recipe.confirmed:
             self.app.notify("Confirma la formulación en BUILD.")
             return

@@ -1,4 +1,17 @@
-"""Estación 1: el cliente entrega el pedido."""
+"""
+screens/order_station.py — estación ORDER (la primera que se ve).
+
+Para qué sirve:
+    Muestra al cliente (PNG) y el ticket: color, viscosidad, adornos.
+    No cambia la receta. El botón Manual NO es otra estación: pone
+    app.manual = True y main.py dibuja el overlay.
+
+Conectado con:
+    - main.py  screens["order"], current empieza en "order"
+    - game_state.order  (qué pide el cliente)
+    - assets_loader.draw_customer
+    - settings.VISCOSITY_BANDS para el rango en Pa·s
+"""
 
 from __future__ import annotations
 
@@ -16,6 +29,7 @@ class OrderStation(BaseScreen):
         self.manual = Button(pygame.Rect(368, 338, 330, 44), "Manual de Fórmulas", (46, 132, 214))
 
     def handle_event(self, event) -> None:
+        # Clic en Manual: main dibuja el libro y pausa el reloj.
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and self.manual.hit(event.pos):
             self.app.manual = True
 

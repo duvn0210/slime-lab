@@ -1,4 +1,17 @@
-"""Estación 2: formulación con sliders, colorante y probeta."""
+"""
+screens/build_station.py — estación BUILD (formulación).
+
+Para qué sirve:
+    Tres sliders (polímero, agente [A], RPM) y la paleta de colorante.
+    Cada movimiento llama state.update_recipe. Confirmar pone confirmed=True
+    para que MIX pueda girar. Si después mueves un slider, se borra MIX.
+
+Conectado con:
+    - game_state.update_recipe / set_color / confirm
+    - physics.nivel_visual y estado_reologico (solo para el vaso)
+    - ui_components.CustomSlider y Beaker
+    - settings  rangos POLYMER_*, AGENT_*, RPM_*
+"""
 
 from __future__ import annotations
 
@@ -81,6 +94,7 @@ class BuildStation(BaseScreen):
             self.active = None
 
     def _push(self) -> None:
+        """Copia los tres sliders al GameState (y puede invalidar la mezcla)."""
         self.state.update_recipe(
             polymer=self.slider_by_key["polymer"].value,
             agent=self.slider_by_key["agent"].value,

@@ -1,4 +1,21 @@
-"""Controles vectoriales de Slime Lab: tarjetas, botones, sliders, vaso y gráficas."""
+"""
+ui_components.py — piezas visuales reutilizables (no son estaciones).
+
+Para qué sirve:
+    Botón “candy” 3D, sliders verticales, vaso con slime, gráficas de MIX.
+    Las estaciones las importan y las colocan. Aquí no hay pedido ni puntaje.
+
+Conectado con:
+    - build_station  CustomSlider, Beaker
+    - mix_station    Beaker, draw_chart, ProgressBar
+    - top_station    Beaker, draw_card
+    - order/result   Button, draw_card
+    - main.py        draw_candy_button (barra de abajo)
+    - settings.C     paleta
+
+Si preguntan “¿el slime es física de partículas?”: no. Beaker anima oleaje
+según μ y RPM. La ciencia está en physics_engine.py.
+"""
 
 from __future__ import annotations
 
@@ -121,7 +138,7 @@ class Button:
 
 
 class CustomSlider:
-    """Riel vertical: arriba es el máximo y la lectura va sobre el riel."""
+    """Slider de BUILD. Arriba = máximo. El valor se guarda en GameState, no aquí."""
 
     def __init__(self, center_x, top, height, min_v, max_v, value, title, unit, accent, decimals) -> None:
         self.track = pygame.Rect(center_x - 16, top, 32, height)
@@ -176,6 +193,7 @@ Slider = CustomSlider
 
 
 class ProgressBar:
+    """Barra de MIX: avance hacia el equilibrio (no es la calificación)."""
     def __init__(self, rect) -> None:
         self.rect = pygame.Rect(rect)
 
@@ -194,7 +212,7 @@ class ProgressBar:
 
 
 class Beaker:
-    """Vaso transparente con slime viscoso animado."""
+    """Vaso de BUILD/MIX/TOP. La animación usa viscosity y rpm; no calcula μ real."""
 
     @staticmethod
     def draw(
@@ -395,6 +413,7 @@ def _draw_slime(body, liquid, color, time, mixing, angle, viscosity, rpm, toppin
 
 
 def draw_chart(surface, rect, title, series, x_max, y_max, color, assets, band=None, dashed=None) -> None:
+    """MIX: band=franja verde del pedido, dashed=μ de equilibrio, series=puntos."""
     draw_card(surface, rect, C["white"], 15, (220, 210, 230))
     title_img = assets.md.render(title, True, C["ink"])
     surface.blit(title_img, (rect.x + 16, rect.y + 12))

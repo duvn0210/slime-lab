@@ -1,4 +1,21 @@
-"""Reología del slime: dilución estequiométrica, ley de potencia y puntuación."""
+"""
+physics_engine.py — ÚNICO sitio de fórmulas (modelo pedagógico SET B).
+
+Para qué sirve:
+    1) Dilución: C_final = (V_base * C_base) / V_total
+    2) Ley de potencia (pseudoplástico): τ = K·γ^n    μ_ap = K·γ^(n-1)
+    3) Mezcla en el tiempo: μ(t) = μ_eq * (1 - exp(-t / τ_mix))
+    4) Puntaje de control de calidad (color, viscosidad, adornos, tiempo)
+
+Conectado con:
+    - settings.py  (constantes; no hardcodear magia aquí)
+    - mix_station  llama estado_reologico, viscosidad_en_tiempo, curva_esfuerzo
+    - build/top    usan nivel_visual (solo look del vaso, no puntúa)
+    - game_state.deliver llama calcular_puntuaciones
+
+Si el profesor pregunta “¿dónde está la ciencia?”, es este archivo.
+No sabe de botones ni de pantallas.
+"""
 
 from __future__ import annotations
 
@@ -94,13 +111,16 @@ class SlimePhysics:
         }
 
     def viscosidad_en_tiempo(self, t: float, mu_eq: float, rpm: float) -> tuple[float, float]:
-        """Acercamiento exponencial al equilibrio. A más RPM, menor constante de tiempo."""
+        """
+        La curva azul de MIX. Nunca cruza μ_eq (la punteada): se le pega.
+        Más RPM → τ_mix más chico → llega antes, pero μ_eq es más baja (corte).
+        """
         tau_mix = MIX_TAU_BASE + MIX_TAU_RPM / max(rpm, 1.0)
         progreso = 1.0 - math.exp(-max(0.0, t) / tau_mix)
         return mu_eq * progreso, tau_mix
 
     def curva_esfuerzo(self, polymer: float, agente: float, puntos: int = 40) -> list[tuple[float, float]]:
-        """Curva de flujo de equilibrio τ(γ) sobre el rango operativo de RPM."""
+        """Gráfica derecha de MIX: τ(γ). No es la nota; es la receta a distintos RPM."""
         estado = self.estado_reologico(polymer, agente, RPM_MIN)
         curva = []
         pasos = max(2, puntos)
@@ -130,7 +150,10 @@ class SlimePhysics:
         decoraciones_aplicadas: set[str],
         tiempo_servicio: float,
     ) -> dict:
-        """Reporte de control de calidad. El total se recorta al rango 0–100."""
+        """
+        Reporte que pinta RESULT. viscosidad_obtenida = achieved_mu (al detener).
+        El total se recorta a 0–100 (por eso 50+44+10 puede salir 100).
+        """
         color = 50 if color_obtenido and color_obtenido == color_pedido else 0
         banda = VISCOSITY_BANDS[viscosidad_objetivo]
         viscosidad = self._puntaje_viscosidad(viscosidad_obtenida, banda)
@@ -160,6 +183,7 @@ class SlimePhysics:
         return "REGULAR"
 
     def _puntaje_viscosidad(self, mu: float | None, banda: dict) -> int:
+        """En banda: 36–50 según cercanía al centro. Fuera: hasta 30, cae con la distancia."""
         if mu is None:
             return 0
         low, high, center = banda["low"], banda["high"], banda["center"]
@@ -172,6 +196,7 @@ class SlimePhysics:
         return int(round(30 * max(0.0, 1.0 - distancia / ancho)))
 
     def _puntaje_decoracion(self, pedidas, aplicadas: set[str]) -> int:
+        """10 * aciertos/pedidos, menos 2 por cada adorno extra."""
         requeridas = set(pedidas)
         puestas = set(aplicadas)
         if not requeridas:

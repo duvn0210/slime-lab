@@ -1,4 +1,24 @@
-"""Bucle principal y máquina de estados de Slime Lab."""
+"""
+main.py — PUNTO DE ENTRADA. Arranca con: python main.py
+
+Para qué sirve:
+    Crea la ventana Pygame y el objeto SlimeLab, que es el “controlador”:
+    posee assets, physics, state y el dict de pantallas. El bucle run()
+    corre a 60 FPS: eventos → update → draw.
+
+    Cambiar de interfaz NO abre otro programa: solo cambia self.current
+    ("order", "build", "mix", "top", "result") y se dibuja otra clase.
+
+Conectado con:
+    - screens/*     se instancian aquí y reciben self (la app)
+    - game_state    una sola memoria para todas
+    - physics_engine  una sola calculadora
+    - assets_loader   fondo, fuentes, clientes
+    - settings        WIDTH, HEIGHT, FPS, STATION_ORDER
+    - ui_components   botones de la barra
+
+No calcula μ ni el puntaje. Eso es physics_engine.
+"""
 
 from __future__ import annotations
 
@@ -33,11 +53,14 @@ from settings import (
 
 
 class SlimeLab:
+    """La app. Todas las estaciones guardan una referencia a esta instancia."""
+
     def __init__(self) -> None:
         pygame.init()
         pygame.display.set_caption("Slime Lab")
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         self.clock = pygame.time.Clock()
+        # Tres objetos compartidos + cinco estaciones. Esto es el “enchufe”.
         self.assets = AssetLoader()
         self.physics = SlimePhysics()
         self.state = GameState()
@@ -93,6 +116,7 @@ class SlimeLab:
         self.toast_ttl = 2.8
 
     def go(self, name: str) -> None:
+        """Cambia la estación activa. Desde RESULT hay que usar Nuevo Pedido."""
         if self.current == "result" and name != "result":
             self.notify("Cierra el reporte con Nuevo Pedido.")
             return
@@ -102,12 +126,14 @@ class SlimeLab:
         self.screens[name].on_enter()
 
     def next_order(self) -> None:
+        """RESULT → pedido nuevo y vuelta a ORDER."""
         self.state.new_order()
         self.current = "order"
         self.screens["build"].on_enter()
         self.screens["result"].on_enter()
 
     def run(self) -> None:
+        """Bucle de juego. dt está topeado a 0.05 s por si la ventana se congela."""
         while self.running:
             dt = min(0.05, self.clock.tick(FPS) / 1000.0)
             self.mouse = pygame.mouse.get_pos()
@@ -118,13 +144,14 @@ class SlimeLab:
                 self.time += dt
                 self.screens[self.current].update(dt)
                 if self.current != "result":
-                    self.state.service_time += dt
+                    self.state.service_time += dt  # reloj del QC; se para con pausa/manual
             if self.toast_ttl > 0:
                 self.toast_ttl = max(0.0, self.toast_ttl - dt)
             self._draw()
         pygame.quit()
 
     def _dispatch(self, event) -> None:
+        """Reparte el evento: primero cromo/pausa/manual, si no la estación actual."""
         if event.type == pygame.QUIT:
             self.running = False
             return
@@ -140,6 +167,7 @@ class SlimeLab:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             if self._chrome_click(event.pos):
                 return
+        # Si el clic no fue de la barra, lo atiende ORDER/BUILD/MIX/TOP/RESULT.
         self.screens[self.current].handle_event(event)
 
     def _on_key(self, event) -> None:
@@ -222,6 +250,7 @@ class SlimeLab:
             self.manual = False
 
     def _draw(self) -> None:
+        # Orden: fondo → contenido de la estación → barras → toasts → overlays.
         self.assets.draw_station(self.screen, self.current)
         self.screens[self.current].draw(self.screen)
         self._draw_topbar()
@@ -405,5 +434,6 @@ def main() -> None:
     SlimeLab().run()
 
 
+# Esto se ejecuta solo si corres este archivo, no si lo importas.
 if __name__ == "__main__":
     main()

@@ -1,4 +1,6 @@
 @echo off
+REM setup.bat — una sola vez después de clonar. Instala pygame en .venv (Python 3.12).
+REM Luego en Visual Studio: interprete .venv\Scripts\python.exe y F5 en main.py.
 cd /d "%~dp0"
 echo === Slime Lab: preparando el entorno (una sola vez) ===
 

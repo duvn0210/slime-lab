@@ -1,4 +1,21 @@
-"""Dibuja el laboratorio, el avatar y una hoja de iconos recortada con subsurface."""
+"""
+assets_loader.py — carga de imágenes, fuentes e iconos.
+
+Para qué sirve:
+    Pone el fondo (fondo_slime.jpg), escala los PNG de clientes y dibuja
+    una “hoja” de iconos de 48 px (moneda, matraz, glitter…). En Windows,
+    si no hay DejaVu, usa Arial.
+
+Conectado con:
+    - main.py crea un AssetLoader
+    - ORDER y RESULT llaman draw_customer
+    - app_paths.resource_dir  (carpeta assets/)
+    - settings WIDTH/HEIGHT
+
+El vaso animado que se ve en BUILD/MIX/TOP NO está aquí: está en
+ui_components.Beaker. Abajo hay un draw_beaker viejo que las estaciones
+ya no usan; no confundirlo.
+"""
 
 from __future__ import annotations
 

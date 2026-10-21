@@ -1,4 +1,25 @@
-"""Pedido activo, formulación, monedas y avance del servicio."""
+"""
+game_state.py — la memoria del partido (el “modelo”).
+
+Para qué sirve:
+    Guarda lo que el jugador va haciendo: pedido del cliente, sliders, si ya
+    confirmó, si ya detuvo MIX, adornos puestos, monedas y el último reporte.
+    No dibuja y no tiene las fórmulas de μ (eso es physics_engine).
+
+Conectado con:
+    - main.py crea UN GameState y lo comparte con todas las pantallas
+    - screens/* leen y escriben self.state
+    - deliver() llama a physics.calcular_puntuaciones
+
+Ciclo que deben poder explicar:
+    sliders → update_recipe (si cambian, se pierde MIX)
+    color → set_color
+    Confirmar → confirmed=True, reset_mix
+    MIX avanza mix_time / push_sample
+    Detener → lock_mix (achieved_mu)
+    TOP → applied (set de adornos)
+    Entregar → deliver → last_report
+"""
 
 from __future__ import annotations
 
@@ -20,6 +41,7 @@ CLIENT_NAMES = {
 
 @dataclass
 class Order:
+    """Pedido del cliente. viscosity es la clave 'baja'|'media'|'alta', no un número."""
     number: int
     color: str
     viscosity: str
@@ -42,6 +64,7 @@ class Order:
 
 @dataclass
 class Recipe:
+    """Lo que el jugador eligió en BUILD. confirmed=False hasta pulsar Confirmar."""
     polymer: float = 5.0
     agent: float = 0.20
     rpm: float = 80.0
@@ -56,14 +79,14 @@ class GameState:
     order_number: int = 0
     order: Order | None = None
     recipe: Recipe = field(default_factory=Recipe)
-    mix_time: float = 0.0
-    mix_locked: bool = False
-    current_mu: float = 0.0
-    achieved_mu: float | None = None
-    history: list[tuple[float, float]] = field(default_factory=list)
-    applied: set[str] = field(default_factory=set)
-    service_time: float = 0.0
-    last_report: dict | None = None
+    mix_time: float = 0.0  # segundos mezclando (solo si confirmed y no locked)
+    mix_locked: bool = False  # True = ya pulsó Detener; μ queda fija
+    current_mu: float = 0.0  # μ ahora en MIX
+    achieved_mu: float | None = None  # μ que entra al QC (al detener)
+    history: list[tuple[float, float]] = field(default_factory=list)  # puntos (t, μ) de la gráfica
+    applied: set[str] = field(default_factory=set)  # adornos en TOP
+    service_time: float = 0.0  # reloj del pedido (main lo suma)
+    last_report: dict | None = None  # lo que pinta RESULT
     _sample_acc: float = 0.0
 
     def __post_init__(self) -> None:
@@ -71,6 +94,7 @@ class GameState:
             self.new_order()
 
     def new_order(self) -> Order:
+        """Pedido 1 es tutorial (rosa, alta, glitter). Luego color/banda/adornos al azar."""
         self.order_number += 1
         sprite = self._pick_sprite()
         if self.order_number == 1:
@@ -107,6 +131,7 @@ class GameState:
         return random.choice(pool)
 
     def update_recipe(self, polymer: float, agent: float, rpm: float) -> None:
+        """BUILD llama esto al mover sliders. Si cambian, se invalida MIX a propósito."""
         changed = (
             abs(self.recipe.polymer - polymer) > 1e-6
             or abs(self.recipe.agent - agent) > 1e-6
@@ -147,6 +172,7 @@ class GameState:
                 self.history = self.history[::2]
 
     def lock_mix(self) -> None:
+        """Congela μ. El QC usa achieved_mu, no el equilibrio de la fórmula."""
         self.mix_locked = True
         self.achieved_mu = self.current_mu
 
@@ -157,6 +183,7 @@ class GameState:
             self.applied.add(key)
 
     def deliver(self, physics) -> dict:
+        """TOP llama esto al entregar. physics hace las cuentas; aquí solo se guardan."""
         report = physics.calcular_puntuaciones(
             color_pedido=self.order.color,
             color_obtenido=self.recipe.color,
