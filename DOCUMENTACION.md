@@ -35,23 +35,7 @@ Dependencia real: solo `pygame>=2.5` (`requirements.txt`). El `.venv` no se vers
 
 En Cursor: **File → Open Folder** sobre `slime-lab` (no hace falta un `.sln`). Punto de entrada: `main.py`.
 
-**Visual Studio en Windows (sin Ubuntu / WSL):** instala [Python 3.12](https://www.python.org/downloads/) marcando *Add python.exe to PATH*, y en el instalador de Visual Studio el workload **Python development**. Luego:
-
-1. **File → Open → Folder** y elige la carpeta `slime-lab` (no hace falta crear un `.sln`).
-2. **View → Terminal**. En esa terminal de PowerShell:
-
-```powershell
-py -3.12 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-```
-
-Si PowerShell bloquea el script de activación: `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
-
-3. En el Explorador de soluciones, clic derecho en `main.py` → **Set as Startup File**.
-4. Pulsa **F5** (o el botón Start). Debe abrirse una ventana de 1024×600.
-
-Si pide un intérprete, elige `.venv\Scripts\python.exe` de esta carpeta. No uses el perfil de WSL.
+**Visual Studio en Windows:** no hace falta teclear el `.venv`. Pasos para clonar y presentar el código: `COMO_JUGAR.md`. En resumen: clonar el repo, doble clic en `setup.bat`, abrir la carpeta, intérprete `.venv\Scripts\python.exe`, F5 en `main.py`. Python **3.12** (no 3.14/3.15).
 
 ---
 

@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pygame
 
+from app_paths import resource_dir
 from settings import BOTTOM_BAR_H, C, HEIGHT, TOP_BAR_H, WIDTH
 
 FONT_REGULAR = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
@@ -51,7 +52,7 @@ class AssetLoader:
         )
 
     def _asset_path(self, name: str) -> Path:
-        return Path(__file__).resolve().parent / "assets" / name
+        return resource_dir() / "assets" / name
 
     def _load_background(self) -> pygame.Surface:
         """Ilustración limpia del laboratorio, a tamaño de ventana."""
