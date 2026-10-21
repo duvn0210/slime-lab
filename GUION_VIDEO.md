@@ -1,53 +1,102 @@
-# Guion del video — cómo funciona el código de Slime Lab
+# Guion del video — Slime Lab, explicado como a niños de 10 años
 
-Grábalo compartiendo pantalla: Visual Studio a la izquierda (el código) y el juego a la derecha. Habla despacio. Este texto se puede leer casi tal cual.
+Este texto se puede leer casi tal cual. Habla despacio. Si te trabas, para el video y sigue desde el siguiente párrafo.
 
-Duración sugerida: 12–15 minutos.
+Imagina que le estás contando el juego a un primo pequeño: **no uses palabras raras sin explicarlas**. Cuando tengas que decir un nombre de archivo, dilo y luego tradúcelo (“esto es la libreta”).
+
+Duración sugerida: **18 a 22 minutos**. Si se alarga, está bien: es mejor que se entienda.
 
 ---
 
-## 0. Cómo grabar (tú, antes de empezar)
+## Cómo grabar (tú, antes de darle play)
 
-1. Abre `slime-lab` en Visual Studio.
+1. Abre la carpeta `slime-lab` en Visual Studio.
 2. Corre el juego: `.\.venv\Scripts\python.exe main.py`
-3. Ten abiertos, en pestañas: `main.py`, `game_state.py`, `physics_engine.py`, `screens/order_station.py`.
-4. Lee este guion. No improvises fórmulas.
+3. Pon el juego a la **derecha** de la pantalla y el código a la **izquierda**.
+4. Ten abiertas estas pestañas: `main.py`, `game_state.py`, `physics_engine.py`, `settings.py`, `screens/order_station.py`, `screens/build_station.py`, `screens/mix_station.py`.
+5. Empieza un pedido nuevo (rosa, viscosidad alta, brillo) para que el ejemplo sea el mismo siempre.
+
+Si el profesor o los compañeros miran, **señala con el mouse** lo que estás nombrando. No leas fórmulas en silencio.
 
 ---
 
-## 1. Qué es el proyecto (1 min)
+## 1. Arranque: qué es este programa (1 min 30 s)
+
+**Mostrar:** la ventana del juego en ORDER (el cliente y el ticket).
 
 Decir:
 
-> Slime Lab es un minijuego educativo en Python con Pygame. No es una página web. Es una ventana de 1024 por 600 que se redibuja 60 veces por segundo. El jugador es un técnico: recibe un pedido, formula el slime, mezcla, decora y entrega. El profesor nos pide relacionar polímero, agente entrecruzante y RPM con la viscosidad aparente de un fluido no newtoniano. El modelo es pedagógico, no un laboratorio real. Le llamamos SET B: dilución más ley de potencia más un transitorio de mezcla.
-
-Mostrar: la ventana del juego en ORDER.
+> Hola. Esto es Slime Lab. Es un minijuego que hicimos en Python. Python es el idioma en el que le escribimos instrucciones a la computadora, como si le diéramos recetas a un robot.
+>
+> Pygame es una caja de herramientas para hacer ventanas, dibujos y clics. No es una página de internet. No hay Wi‑Fi ni servidor. Todo vive en esta ventanita de mil veinticuatro por seiscientos píxeles. Un píxel es un puntito de color en la pantalla.
+>
+> El juego se redibuja unas sesenta veces por segundo. Es como un flipbook: muchas fotitos seguidas y parece que el slime se mueve.
+>
+> Tú eres un técnico de laboratorio. Un cliente te pide un slime de un color, más líquido o más espeso, y con unos stickers. Tú lo armas, lo mezclas, lo decoras y se lo entregas. La computadora te pone una nota.
 
 ---
 
-## 2. Mapa de archivos (2 min)
+## 2. La idea más importante: el juego es un cuaderno con cinco hojas (2 min)
 
-En el Explorador de Visual Studio, ir archivo por archivo:
-
-| Archivo | Frase corta |
-|---|---|
-| `main.py` | El cerebro de la app: ventana, teclas, cambio de pantalla. |
-| `settings.py` | Números fijos: tamaño, bandas de viscosidad, colores. |
-| `game_state.py` | La memoria: el pedido de ahora, la receta, si ya mezclaste. |
-| `physics_engine.py` | Las únicas fórmulas. Si el profesor pregunta “dónde está la física”, aquí. |
-| `ui_components.py` | Cómo se ven botones, sliders, vaso y gráficas. |
-| `assets_loader.py` | Carga el fondo y los PNG de los clientes. |
-| `screens/` | Una clase por estación. |
+**Mostrar:** los botones de abajo: ORDER, BUILD, MIX, TOP.
 
 Decir:
 
-> La regla de capas es esta: las pantallas no calculan la viscosidad. Le piden el número a physics. Tampoco guardan el pedido: lo leen de state. main es el único que decide qué pantalla está activa.
+> Miren abajo. Esos cuatro botones no son cuatro programas distintos. Es **un solo programa** con cinco hojas, como un cuaderno.
+>
+> Primera hoja, ORDER: el cliente te pasa el pedido. Segunda, BUILD: tú echas los ingredientes. Tercera, MIX: bates y miras si quedó del espesor correcto. Cuarta, TOP: le pegas stickers y entregas. Quinta, RESULT: te ponen la nota, como el control de calidad.
+>
+> Cuando haces clic en BUILD, no se abre otra aplicación. Solo damos vuelta la hoja. El pedido sigue siendo el mismo, porque está escrito en una sola libreta que todas las hojas pueden leer.
+
+Señalar en el Explorador de Visual Studio la carpeta `screens`.
+
+> Cada hoja tiene su propio archivo dentro de la carpeta screens. screens significa “pantallas”. order_station es la hoja del cliente. build_station es la de los sliders. mix_station la de las gráficas. top_station la de los stickers. result_station la de la nota.
+>
+> Hay un archivo extra que se llama base_screen. Ese es el molde. Es como el patrón de una galleta: las cinco hojas salen del mismo cortador, para no copiar las mismas instrucciones cinco veces.
 
 ---
 
-## 3. Cómo se “conectan las interfaces” (3 min)
+## 3. Los cuatro oficios del código (3 min)
 
-Abrir `main.py`, constructor de `SlimeLab`. Señalar:
+**Mostrar:** el Explorador, ir archivo por archivo, lento.
+
+Decir:
+
+> El código no es un montón de letras sueltas. Es un equipo de cuatro oficios. Si se acuerdan de estos cuatro, ya entendieron cómo se conecta todo.
+
+### Oficio 1 — El director (`main.py`)
+
+> main.py es el director de la obra. Abre la ventana, pone el título “Slime Lab”, mira el mouse, oye las teclas y decide qué hoja se ve. También pinta las barritas de arriba y de abajo: las monedas, las flechas, MENÚ, pausa. Esas barritas no son de ninguna estación: son del director, para que se vean iguales en todas las hojas.
+
+### Oficio 2 — La libreta (`game_state.py`)
+
+> game_state es la libreta del laboratorio. Recuerda: qué pidió el cliente, qué pusiste en los sliders, si ya confirmaste, cuánto tiempo llevas batiendo, en qué espesor te detuviste, qué stickers pegaste, cuántas monedas tienes y qué nota sacaste.
+>
+> Ninguna hoja guarda eso por su cuenta. Todas preguntan a la misma libreta. Por eso, si en BUILD eliges color rosa, en MIX el vaso sigue rosa. No se lo tienen que contar por teléfono: leen el mismo cuaderno.
+
+### Oficio 3 — La calculadora (`physics_engine.py`)
+
+> physics_engine es la calculadora. No pinta botones. No sabe si estás en MIX o en TOP. Solo recibe números —cuánto polímero, cuánto agente, qué tan rápido giras— y responde: “este slime se siente de tanto espesor” y, al final, “tu nota es esta”.
+>
+> Si el profesor pregunta “¿dónde está la ciencia?”, señalamos este archivo. Las pantallas no inventan la viscosidad. Se la piden a la calculadora.
+
+### Oficio 4 — Los crayones (`ui_components.py` + `assets_loader.py`)
+
+> ui_components son los crayones: cómo se ve un botón gordito, un slider, el vaso de vidrio y las gráficas.
+>
+> assets_loader es la caja de fotos: el laboratorio de fondo, las caras de Mia, Zack, Layla y el doctor Ben, las letritas y los iconitos de moneda y matraz.
+>
+> Y hay un archivo que no hace nada de “trabajo”, solo es la lista de números: settings.py. Ahí está el tamaño de la ventana, hasta dónde llegan los sliders y los rangos de viscosidad. Es el recetario. Si el profesor pregunta “¿por qué alta es de 4.80 a 8.80?”, abrimos settings.py, no las pantallas.
+
+**Mostrar** `settings.py` un segundo, `VISCOSITY_BANDS`.
+
+---
+
+## 4. Cómo se conectan las interfaces (el truco del video) (4 min)
+
+Esta parte es la más importante. No la corras.
+
+**Mostrar:** `main.py`, el constructor, estas líneas:
 
 ```python
 self.assets = AssetLoader()
@@ -55,118 +104,220 @@ self.physics = SlimePhysics()
 self.state = GameState()
 self.screens = {
     "order": OrderStation(self),
+    "build": BuildStation(self),
     ...
 }
 self.current = "order"
 ```
 
-Decir:
+Decir, señalando cada línea:
 
-> Al arrancar se crean tres objetos compartidos: arte, física y estado. Luego se crean las cinco estaciones y a cada una le pasamos self, o sea la app entera. Por eso cada pantalla puede hacer self.state o self.physics. No hay URLs ni servidores. Es el mismo programa en memoria.
+> Al encender el juego pasa esto, una sola vez, en orden.
+>
+> Primero: carga las fotos. Segundo: arma la calculadora. Tercero: abre la libreta en blanco y escribe el primer pedido. Cuarto: crea las cinco hojas y a cada hoja le pasa self. self significa “yo, el juego entero”. Es como darle a cada hoja una llave de la misma casa.
+>
+> Por eso después, dentro de una hoja, pueden decir self.state y están leyendo la libreta, o self.physics y están usando la calculadora, o self.assets y pegan una foto. No hay internet. Es memoria de la misma computadora, el mismo programa.
+>
+> current es un letrerito que dice qué hoja está abierta. Empieza en order. Cambiar de interfaz es cambiar esa palabrita. No se tira la hoja anterior a la basura. Sigue viva, solo que no se pinta.
 
-Abrir `screens/base_screen.py`, clase `BaseScreen`. Señalar `state`, `assets`, `physics`.
+**Mostrar:** `screens/base_screen.py`, la clase `BaseScreen`, las propiedades `state`, `assets`, `physics`.
 
-Decir:
+> Aquí está el atajo. Las cinco hojas heredan este molde. Heredar quiere decir: “yo también soy una BaseScreen, así que ya sé preguntarle al juego por la libreta, las fotos y la calculadora”. No copiamos ese código cinco veces.
 
-> Todas las estaciones heredan BaseScreen. Por eso todas tienen los mismos tres atajos. Cada una implementa handle_event (clics), update (si el tiempo avanza) y draw (pintar).
+**Mostrar:** `main.py`, el método `run`, el `while`.
 
-Abrir `main.py`, método `run`. Decir, señalando el while:
+> Esto es el corazón. Un while es un “repite esto hasta que cierre la ventana”. Cada vueltita, unas sesenta por segundo, el director hace cuatro preguntas:
+>
+> Uno: ¿pasó un segundo? Guarda un pedacito de tiempo que llamamos dt, “cuánto duró esta fotito”.
+>
+> Dos: ¿el jugador hizo clic o apretó una tecla? Si el clic fue en ORDER o en pausa, lo atiende el director. Si fue dentro de la hoja, se lo pasa a la hoja: handle_event. handle_event significa “atiende lo que acaba de pasar”.
+>
+> Tres: si no estamos en pausa ni en el manual, le dice a la hoja actual: update. update significa “avanza un poquito”. MIX es la única que de verdad usa esto: sube el espesor. Las otras casi no hacen nada aquí.
+>
+> Cuatro: pinta. Fondo, luego la hoja actual con draw, luego las barras, luego el avisito amarillo si hay uno. draw significa “dibújate”.
+>
+> Eso es todo el juego, para siempre, hasta que cierras.
 
-> Esto es el bucle de Pygame. Cada vuelta: espera al siguiente frame, lee el mouse, reparte eventos, si no estamos en pausa actualiza la estación actual, y al final dibuja. Dibujar es: fondo, luego screens[current].draw, luego las barras de arriba y abajo.
+**Mostrar:** el método `go`.
 
-Abrir `go`. Decir:
+> go es “cambia de hoja”. Le pones el nombre: build, mix, top. Si ya estás viendo la nota, no te deja volver. Te sale un avisito: cierra el reporte con Nuevo Pedido. Eso es a propósito, para que no hagas trampa retocando el slime después de ver el puntaje.
 
-> Cambiar de interfaz es cambiar un string: current = "build". No se destruye la pantalla. La próxima vez que dibuje, usa otra clase. Desde RESULT no te deja volver: te manda el toast de Nuevo Pedido. Eso es intencional para no retocar el slime después de ver la nota.
+**Mostrar en el juego:** clic en ORDER, BUILD, MIX, TOP. Volver a señalar `main.py`, `_chrome_click`.
 
-Mostrar en el juego: clicar ORDER, BUILD, MIX, TOP. Decir que esos botones están en main, no en cada estación (`_chrome_click`).
-
----
-
-## 4. Recorrido ORDER → RESULT (5 min)
-
-### ORDER
-
-Abrir `screens/order_station.py`. Mostrar el ticket.
-
-> ORDER solo lee state.order. El primer pedido está fijo en game_state.new_order: rosa, viscosidad alta, glitter. Los siguientes salen al azar. El cliente es un PNG. El botón Manual no es una estación: pone app.manual = True y main dibuja el overlay. El reloj se detiene con el manual.
-
-### BUILD
-
-Abrir `build_station.py` y `game_state.update_recipe`.
-
-> Tres sliders escriben polímero, agente y RPM. Colorante llama set_color. Confirmar pone confirmed True y reinicia la mezcla. Si vuelves y mueves un slider, confirmed pasa a False y se pierde MIX. El vaso es solo visual: la altura usa physics.nivel_visual, que no entra al puntaje.
-
-### MIX
-
-Abrir `mix_station.py` update y `physics.viscosidad_en_tiempo`.
-
-> MIX es la única que usa update de verdad. Si confirmaste y no has detenido, avanza mix_time y calcula μ. La gráfica izquierda es μ contra tiempo. Verde = banda del cliente. Punteada = equilibrio de esta receta. La azul se acerca a la punteada con una exponencial y no la cruza. Eso está bien: el slime llega a un tope y se queda. La gráfica derecha es esfuerzo de corte, una propiedad de la receta, no la nota. Detener Mezcla guarda achieved_mu. El QC usa eso, no el equilibrio. Espacio hace lo mismo.
-
-### TOP
-
-Abrir `top_station.py` `_deliver`.
-
-> Los adornos son un set. Clic alterna; arrastrar al vaso también. Entregar revisa tres cosas: formulación confirmada, mezcla detenida, color elegido. Si falta alguna, hay un toast. Si está bien, deliver pide a physics el reporte, suma monedas y salta a RESULT.
-
-### RESULT
-
-Abrir `result_station.py`.
-
-> Pinta last_report. Cara del cliente: triste si menos de 70, normal si 70 a 89, más sonrisa si 90 o más. Nuevo Pedido llama next_order: pedido nuevo, receta en blanco, otra vez ORDER.
+> Estos botones de abajo no están dentro de cada estación. Están en el director. chrome, en este código, significa el marco: las barras. Así las cuatro hojas no pelean por pintar el menú.
 
 ---
 
-## 5. Física en palabras fáciles (2 min)
+## 5. Recorrido jugando: de ORDER a RESULT (7 min)
 
-Abrir `physics_engine.py` y `settings.py`.
+Ahora juega despacio y ve al código de esa hoja.
 
-> Tres ideas. Primera, dilución: C_final = (V_base por C_base) sobre V_total. El agente ocupa volumen, así que diluye un poco, pero entrecruza y sube K. Segunda, ley de potencia: tau = K por gamma a la n. Mu aparente es K por gamma a la n menos 1. Como n es menor que 1, si agitas más rápido el slime se siente menos espeso. Eso es pseudoplástico. Tercera, el tiempo: mu no aparece de golpe. Sube hacia el equilibrio. A más RPM llega antes, pero el equilibrio es más bajo.
+### ORDER — el ticket
 
-Receta para el profesor:
+**Mostrar:** el juego en ORDER. Luego `screens/order_station.py`.
 
-> Viscosidad alta: más polímero, más agente, pocas RPM, y detener cuando la azul entre en el verde. Viscosidad baja: lo contrario.
+> Esta hoja casi no piensa. Solo lee la libreta: “¿quién es el cliente y qué pidió?” y lo pinta. El primer pedido siempre es el mismo, para que todos practiquen igual: slime rosa, viscosidad alta, brillo. Eso está escrito en game_state, en new_order. Los pedidos siguientes salen al azar.
+>
+> El cliente es una foto PNG, no un muñequito 3D. El botón Manual no es una sexta hoja. Solo le dice al director: “abre el folleto encima”. El reloj se pausa para que puedas leer las fórmulas sin que te resten puntos.
+
+Clic en Manual, muéstralo, ciérralo.
+
+### BUILD — la receta
+
+**Mostrar:** BUILD. Mueve un slider. Luego `build_station.py` y `game_state.update_recipe`.
+
+> Aquí hay tres palancas. Polímero es el polvo que da cuerpo, como harina. Agente es lo que entrecruza, como gelatina: hace red y el slime se siente más gel. Velocidad es qué tan rápido gira el batidor, en RPM: revoluciones por minuto.
+>
+> Cuando arrastras una palanca, BUILD no se guarda el número para ella solita. Llama a update_recipe y lo escribe en la libreta. La calculadora todavía no pone la nota. Solo, si quieres, puede decir qué tan lleno se ve el vaso. Eso es dibujo, no puntaje.
+>
+> El colorante también se guarda en la libreta. Confirmar formulación es como decir “ya no toco la receta”. Pone un sí en confirmed. Hasta que no confirmes, en MIX el batidor no gira.
+>
+> Ojo, esto le gusta al profesor: si después de confirmar vuelves y mueves un slider, la libreta dice “esto ya no es la misma receta” y borra la mezcla. No puedes hacer trampa cambiando números a escondidas.
+
+Confirma la formulación. Avisa en voz alta: “ya está el sí en la libreta”.
+
+### MIX — el corazón de la ciencia
+
+**Mostrar:** MIX. Luego `mix_station.py` `update` y `physics_engine.py` `viscosidad_en_tiempo`.
+
+> MIX es la única hoja que usa de verdad el reloj de cada fotito. Si confirmaste y no has detenido, cada vueltita suma un poquito de tiempo, le pregunta a la calculadora “¿qué tan espeso voy?” y guarda un puntito para la gráfica azul.
+>
+> La gráfica de la izquierda es la importante. Imaginen un termómetro del espesor.
+>
+> La franja verde no es tu receta. Es lo que pidió el cliente. “Quiero el slime entre tanto y tanto”.
+>
+> La línea de puntitos es el tope de TU receta. Si nunca detienes, el slime se acerca a esa raya y se queda. No la cruza. Es como calentar agua: sube hacia una temperatura y se queda, no se pone más caliente que el fuego.
+>
+> La línea azul eres tú ahora. Empieza abajo y se curva hacia los puntitos.
+>
+> La barrita de abajo no es la nota. Es “qué tan cerca estoy del tope de mi receta”. Puedes llenarla y igual perder, si tu tope está fuera del verde. Y puedes detener a medias y sacar cien, si en ese momento la azul está dentro del verde.
+>
+> La gráfica de la derecha no es un examen. Es un retrato de cómo se comporta el slime si agitaras más rápido o más lento. No suma puntos.
+>
+> Detener Mezcla (o la barra espaciadora) copia el espesor de ahora y lo congela. La nota usa ese número congelado, no el tope. Si te pasas, puedes Reiniciar mezcla y volver a batir.
+
+Detén cuando la azul esté en el verde. Di el número que salga.
+
+### TOP — los stickers
+
+**Mostrar:** TOP y `top_station.py` `_deliver`.
+
+> Aquí la libreta tiene una cajita de stickers puestos. Clic en una herramienta la pone o la quita. También puedes arrastrarla al vaso. El brillo, las estrellas, la tapa, el sello y la etiqueta de seguridad son adornos. Si el cliente pidió brillo y no se lo pones, te faltan puntos. Si pones extras que no pidió, también te restan un poquito.
+>
+> Entregar Pedido es el portero. Revisa tres cosas: ¿confirmaste la receta? ¿detuviste la mezcla? ¿elegiste color? Si falta algo, sale un avisito amarillo y no te deja pasar. Si está bien, le pide a la calculadora el reporte, suma monedas en la libreta y el director cambia current a result.
+
+Entrega el pedido.
+
+### RESULT — la nota
+
+**Mostrar:** RESULT y `result_station.py`.
+
+> Esta hoja lee last_report, o sea “el último reporte”, que la calculadora escribió en la libreta. Pinta puntos de color, de viscosidad, de adornos, el total y las monedas.
+>
+> La cara del cliente cambia: triste si sacaste menos de setenta, normal si vas bien, más sonrisa y confeti si llegas a noventa.
+>
+> Nuevo Pedido llama a next_order: limpia la receta, pide otro cliente y vuelve a la hoja ORDER. Desde aquí no puedes volver a MIX a escondidas.
 
 ---
 
-## 6. Cómo se saca la nota (1 min)
+## 6. La calculadora, con palabras de cocina (3 min)
 
-Abrir `calcular_puntuaciones`.
+**Mostrar:** `physics_engine.py` y `settings.py`.
 
-> Color 50 o 0. Viscosidad hasta 50: si estás en la banda, entre 36 y 50 según qué tan cerca del centro. Si estás fuera, hasta 30 y cae. Decoración 10, menos 2 por cada adorno de más. Tiempo: 120 segundos de gracia, luego menos 2 cada 8 segundos, máximo menos 16. Eso no se imprime en el ticket, pero sí se resta. El total se recorta entre 0 y 100. Por eso puedes ver 50 + 44 + 10 y aun así 100: 104 se corta.
+> Tres ideas. Nada de asustarse con las letras griegas.
+>
+> Primera: dilución. Si echas más “agua”, el polvo se reparte. El agente también ocupa espacio, así que aclara un poquito, pero a la vez entrecruza y le da más cuerpo. La frase es: concentración final igual a polímero por diez, dividido entre el volumen total.
+>
+> Segunda: el slime no es miel normal. La miel espesa igual si la revuelves despacio o rápido. Este slime es pseudoplástico: cuanto más rápido lo bates, más flojo se siente. Por eso, si el cliente pide viscosidad alta, no pongas el batidor al máximo. Más RPM baja el tope.
+>
+> Tercera: el espesor no aparece de golpe. Sube hacia el tope, como el agua hacia la temperatura del fuego. Por eso la azul nunca cruza los puntitos. Eso no es un bug. Es el modelo.
+>
+> Receta fácil para el profesor: viscosidad alta, más polímero, más agente, pocas RPM, y detener cuando la azul entre en el verde. Viscosidad baja: lo contrario, y un poco más de batido.
 
 ---
 
-## 7. Preguntas que puede hacer el profesor
+## 7. Cómo se saca la nota (1 min 30 s)
+
+**Mostrar:** `calcular_puntuaciones` en `physics_engine.py`.
+
+> Color: cincuenta o cero. Acertaste el colorante o no.
+>
+> Viscosidad: hasta cincuenta. Si caíste dentro de la banda del cliente, entre treinta y seis y cincuenta, mejor si quedaste cerca del centro. Si te saliste, como mucho treinta.
+>
+> Adornos: hasta diez. Te restan dos por cada sticker de más.
+>
+> Tiempo: dos minutos de gracia. Luego menos dos puntos cada ocho segundos, máximo menos dieciséis. Eso no se escribe en la tarjetita, pero sí se resta.
+>
+> Al final, si la suma pasa de cien, se deja en cien. Por eso a veces ves cincuenta más cuarenta y cuatro más diez y el total igual es cien: ciento cuatro no cabe.
+
+---
+
+## 8. Preguntas cortas (por si el profesor para el video)
+
+Léelas solo si hace falta, o déjalas al final.
+
+**¿Es como una página web con frontend y backend?**  
+> No. Todo es un solo programa en tu computadora. La “cara” son las pantallas y los crayones. El “cerebro” son la libreta y la calculadora.
 
 **¿Es MVC?**  
-Parecido. Vista = screens + ui. Modelo = game_state + physics. Controlador = main y los handle_event. No usamos un framework MVC.
-
-**¿Dónde está el “frontend” y el “backend”?**  
-No hay. Todo es un cliente Pygame. La “lógica de negocio” es physics_engine y game_state.
+> Parecido, sin framework. Vista: screens y ui. Modelo: game_state y physics. Controlador: main y los clics.
 
 **¿Por qué no Unity?**  
-El curso pide ver las fórmulas. En Python se leen en un archivo. Pygame pinta la ventana.
+> Queríamos que las fórmulas se leyeran en un archivo de Python, no escondidas en un motor de videojuegos.
 
-**¿El slime es física real de partículas?**  
-No. El vaso anima oleaje según μ y RPM. La altura no puntúa. La ciencia está en las fórmulas de μ.
+**¿El slime es física de partículas de verdad?**  
+> No. El vaso anima olas y burbujas para que se vea más o menos espeso. La ciencia está en los números de μ, no en cada gotita.
 
 **¿Por qué la curva no cruza la punteada?**  
-Porque μ(t) = μ_eq veces (1 menos e a la menos t sobre tau). Nunca pasa el equilibrio. La banda verde es otra cosa: es el pedido.
+> Porque el espesor se acerca al tope y se queda. La franja verde es otra cosa: es el pedido del cliente.
 
-**¿Se puede hacer trampa volviendo a BUILD?**  
-Si mueves sliders se borra la mezcla. RESULT no deja volver. Hay que hacer Nuevo Pedido.
+**¿Se puede hacer trampa?**  
+> Si mueves sliders, se borra la mezcla. Si ya viste la nota, no te deja volver. Hay que hacer Nuevo Pedido.
 
 **¿Hay sonido?**  
-El botón existe (sound_on) pero no hay audio todavía.
+> El botón del parlante existe, pero todavía no hay audio.
 
-**¿Dónde están los números de las bandas?**  
-`settings.py`, VISCOSITY_BANDS. Baja 0.50–1.50, media 1.85–3.40, alta 4.80–8.80. Son bandas de juego, no mediciones de lab.
-
-**Punto de entrada**  
-`main.py`, `if __name__ == "__main__"`. Dependencia: pygame en `requirements.txt`. Python 3.12.
+**¿Dónde arranca todo?**  
+> main.py, hasta abajo: if name igual main. Eso significa: “si me abriste a mí, enciende el juego”.
 
 ---
 
-## 8. Cierre (20 s)
+## 9. Cierre (30 s)
 
-> En una frase: main elige la pantalla, las pantallas dibujan y toman clics, game_state recuerda el pedido y la receta, physics_engine calcula viscosidad y nota. Si el profesor pregunta “dónde está X”, vamos al archivo de esa capa y no mezclamos.
+**Mostrar:** otra vez el Explorador, los cuatro oficios.
+
+> En una frase, para que se les quede:
+>
+> El director elige la hoja. Las hojas dibujan y oyen los clics. La libreta recuerda el pedido y lo que tú hiciste. La calculadora saca el espesor y la nota. Los crayones y las fotos solo se ven.
+>
+> Si alguien pregunta “¿dónde está X?”, vamos al oficio que le toca. No mezclamos. Eso es cómo se conecta Slime Lab.
+>
+> Gracias.
+
+---
+
+## Extra: mapa para señalar con el mouse (imprímelo o tenlo al lado)
+
+```
+Tú haces clic
+        ↓
+main.py (el director) decide: ¿fue el menú o la hoja?
+        ↓
+la hoja (screens/...) atiende el clic
+        ↓
+escribe o lee game_state.py (la libreta)
+        ↓
+si necesita un número de espesor o la nota,
+pregunta a physics_engine.py (la calculadora)
+        ↓
+physics lee settings.py (el recetario de números)
+        ↓
+la hoja pide a ui_components.py y assets_loader.py
+que pinten vaso, botones y fotos
+        ↓
+main.py pinta las barras y muestra la fotito
+```
+
+Frase de bolsillo si se te olvida el guion:
+
+> Cinco hojas, una libreta, una calculadora, un director que da vuelta las páginas sesenta veces por segundo.
