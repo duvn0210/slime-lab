@@ -1,19 +1,14 @@
 """
-screens/ — paquete de las 5 estaciones (las “interfaces” del juego).
+Esta carpeta es cada “hoja” de la ventana del juego.
 
-Para qué sirve:
-    En Python, una carpeta con __init__.py es un paquete. Así main.py puede hacer:
-        from screens.order_station import OrderStation
+    order_station   el cliente te pasa el ticket
+    build_station   tú armas la receta (sliders y color)
+    mix_station     mezclas y miras las gráficas
+    top_station     pones stickers y entregas
+    result_station  te ponen la nota
 
-Archivos de este paquete:
-    base_screen.py     clase padre + helpers de texto
-    order_station.py   ORDER  (pedido)
-    build_station.py   BUILD  (sliders y color)
-    mix_station.py     MIX    (gráficas y detener)
-    top_station.py     TOP    (adornos y entregar)
-    result_station.py  RESULT (nota)
+base_screen es el molde: las 5 hojas copian de ahí el truco para preguntarle
+al juego “¿cuál es el pedido?” sin repetir código.
 
-Conectado con:
-    main.py crea las 5 clases y guarda un dict screens[nombre].
-    Cada estación recibe la app (self) y por BaseScreen accede a state, physics y assets.
+main.py abre las 5 al arrancar y va mostrando una a la vez.
 """

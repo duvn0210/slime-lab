@@ -1,20 +1,13 @@
 """
-ui_components.py — piezas visuales reutilizables (no son estaciones).
+Las piezas de LEGO de la interfaz: botones gorditos, sliders, el vaso y
+las gráficas.
 
-Para qué sirve:
-    Botón “candy” 3D, sliders verticales, vaso con slime, gráficas de MIX.
-    Las estaciones las importan y las colocan. Aquí no hay pedido ni puntaje.
+Ninguna de estas piezas sabe qué pidió el cliente ni cuánto sacaste.
+Solo saben pintarse. Las pantallas las colocan donde toca.
 
-Conectado con:
-    - build_station  CustomSlider, Beaker
-    - mix_station    Beaker, draw_chart, ProgressBar
-    - top_station    Beaker, draw_card
-    - order/result   Button, draw_card
-    - main.py        draw_candy_button (barra de abajo)
-    - settings.C     paleta
-
-Si preguntan “¿el slime es física de partículas?”: no. Beaker anima oleaje
-según μ y RPM. La ciencia está en physics_engine.py.
+Si preguntan si el slime “simula moléculas”: no. El vaso es un dibujo que
+se mueve más o menos según qué tan espeso va y qué tan rápido agitas.
+Las cuentas de verdad están en physics_engine.py.
 """
 
 from __future__ import annotations
@@ -27,6 +20,7 @@ from settings import C
 
 
 def _tone(color, amount: float) -> tuple[int, int, int]:
+    """Aclara u oscurece un color para el brillo y la sombra de los botones."""
     r, g, b = color[:3]
     if amount >= 0:
         return (
@@ -52,7 +46,7 @@ def draw_candy_button(
     enabled=True,
     radius=None,
 ) -> pygame.Rect:
-    """Botón tipo caramelito: borde grueso, labio 3D, brillo y texto con sombra."""
+    """Botón gordito de colores (ORDER, Confirmar, Detener…). Si pasas el mouse, se levanta un poco."""
     hover = enabled and rect.collidepoint(mouse)
     body = pygame.Rect(rect)
     if active:
@@ -89,6 +83,7 @@ def draw_candy_button(
 
 
 def draw_card(surface, rect, fill=(255, 250, 252), radius=15, border=None, border_w=2) -> None:
+    """Cajita blanca con sombrita. La usan el ticket, las gráficas y las herramientas."""
     shadow = pygame.Surface((rect.w + 16, rect.h + 18), pygame.SRCALPHA)
     pygame.draw.rect(shadow, (24, 10, 48, 72), shadow.get_rect(), border_radius=radius)
     surface.blit(shadow, (rect.x - 4, rect.y + 6))
@@ -106,25 +101,30 @@ def draw_card(surface, rect, fill=(255, 250, 252), radius=15, border=None, borde
 
 class Card:
     def __init__(self, rect, fill=(255, 250, 252), radius=15, border=None) -> None:
+        """Guarda dónde y de qué color va una cajita, para pintarla después."""
         self.rect = pygame.Rect(rect)
         self.fill = fill
         self.radius = radius
         self.border = border
 
     def draw(self, surface) -> None:
+        """Pinta esa cajita en la pantalla."""
         draw_card(surface, self.rect, self.fill, self.radius, self.border)
 
 
 class Button:
     def __init__(self, rect, label: str, color) -> None:
+        """Un botón con texto: Manual, Confirmar, Detener, Entregar, Nuevo Pedido."""
         self.rect = pygame.Rect(rect)
         self.label = label
         self.color = color
 
     def hit(self, pos) -> bool:
+        """¿El clic cayó encima de este botón?"""
         return self.rect.collidepoint(pos)
 
     def draw(self, surface, font, mouse, active=False, enabled=True) -> None:
+        """Pinta el botón. Si el mouse está encima, se ve un poco más claro."""
         draw_candy_button(
             surface,
             self.rect,
@@ -138,9 +138,10 @@ class Button:
 
 
 class CustomSlider:
-    """Slider de BUILD. Arriba = máximo. El valor se guarda en GameState, no aquí."""
+    """Las tres barritas verticales de BUILD. Arriba es el máximo. El número se guarda en la libreta, no aquí."""
 
     def __init__(self, center_x, top, height, min_v, max_v, value, title, unit, accent, decimals) -> None:
+        """Crea una barrita (volumen, polímero o agente). El número real se copia a la libreta al soltar."""
         self.track = pygame.Rect(center_x - 16, top, 32, height)
         self.hit = pygame.Rect(center_x - 42, top - 8, 84, height + 16)
         self.min_v = min_v
@@ -153,20 +154,24 @@ class CustomSlider:
         self.center_x = center_x
 
     def fraction(self) -> float:
+        """Qué tan llena está la barrita, de 0 (abajo) a 1 (arriba). Sirve para pintarla."""
         span = self.max_v - self.min_v
         if span <= 0:
             return 0.0
         return max(0.0, min(1.0, (self.value - self.min_v) / span))
 
     def set_from_y(self, mouse_y: int) -> None:
+        """Si arrastras el mouse, convierte la altura en el número de esa barra."""
         span = max(1, self.track.h)
         t = 1.0 - (mouse_y - self.track.y) / span
         self.value = self.min_v + max(0.0, min(1.0, t)) * (self.max_v - self.min_v)
 
     def display(self) -> str:
+        """El texto que ves encima (ej. 0.25 L)."""
         return f"{self.value:.{self.decimals}f}{self.unit}"
 
     def draw(self, surface, title_font, value_font) -> None:
+        """Pinta título, número y la barrita de color."""
         title = title_font.render(self.title, True, C["white"])
         surface.blit(title, title.get_rect(midbottom=(self.center_x, self.track.y - 46)))
         chip = pygame.Rect(self.center_x - 38, self.track.y - 40, 76, 28)
@@ -193,11 +198,13 @@ Slider = CustomSlider
 
 
 class ProgressBar:
-    """Barra de MIX: avance hacia el equilibrio (no es la calificación)."""
+    """La barrita de MIX. Llena = llegaste al tope de la receta, no = ganaste."""
     def __init__(self, rect) -> None:
+        """Dónde va la barrita de MIX en la pantalla."""
         self.rect = pygame.Rect(rect)
 
     def draw(self, surface, ratio: float, font, label: str) -> None:
+        """Pinta cuánto de viscosidad alcanzada vs el tope de la receta (no es la nota)."""
         ratio = max(0.0, min(1.0, ratio))
         caption = font.render(label, True, C["white"])
         surface.blit(caption, caption.get_rect(midbottom=(self.rect.centerx, self.rect.y - 6)))
@@ -212,7 +219,7 @@ class ProgressBar:
 
 
 class Beaker:
-    """Vaso de BUILD/MIX/TOP. La animación usa viscosity y rpm; no calcula μ real."""
+    """El vaso de vidrio. Se anima (olas, burbujas) para que se vea más o menos espeso. No calcula la nota."""
 
     @staticmethod
     def draw(
@@ -229,6 +236,7 @@ class Beaker:
         viscosity=2.5,
         rpm=80.0,
     ) -> pygame.Rect:
+        """Pinta el vaso, el slime adentro y los adornos. fill es qué tan lleno, viscosity qué tan espeso se ve."""
         toppings = toppings or set()
         glass = pygame.Rect(rect.x + 6, rect.y + 26, rect.w - 12, rect.h - 64)
         rim_h = 18
@@ -278,6 +286,7 @@ class Beaker:
 
 
 def _draw_slime(body, liquid, color, time, mixing, angle, viscosity, rpm, toppings) -> None:
+    """Dibuja el slime (olas, burbujas, brillo). Más viscosidad = se mueve menos. Solo visual."""
     mu = max(0.3, float(viscosity))
     thick = min(1.0, mu / 8.0)
     thin = 1.0 - thick
@@ -413,7 +422,7 @@ def _draw_slime(body, liquid, color, time, mixing, angle, viscosity, rpm, toppin
 
 
 def draw_chart(surface, rect, title, series, x_max, y_max, color, assets, band=None, dashed=None) -> None:
-    """MIX: band=franja verde del pedido, dashed=μ de equilibrio, series=puntos."""
+    """Dibuja una gráfica. En MIX, band es el verde del cliente y dashed la línea de puntos del tope."""
     draw_card(surface, rect, C["white"], 15, (220, 210, 230))
     title_img = assets.md.render(title, True, C["ink"])
     surface.blit(title_img, (rect.x + 16, rect.y + 12))
@@ -446,6 +455,7 @@ def draw_chart(surface, rect, title, series, x_max, y_max, color, assets, band=N
 
 
 def _star(surface, cx, cy, radius, color, spin=0.0, outline=None) -> None:
+    """Estrellita. Sale dentro del slime si pediste adorno de estrellas, o en el sello."""
     points = []
     for i in range(10):
         ang = -math.pi / 2 + spin + i * math.pi / 5
@@ -465,6 +475,7 @@ def _star(surface, cx, cy, radius, color, spin=0.0, outline=None) -> None:
 
 
 def _sparkle(surface, x, y, size, color) -> None:
+    """Puntito de brillo. Sale si pediste glitter."""
     cx, cy = int(x), int(y)
     span = max(2, int(size * 2.4))
     pygame.draw.line(surface, color, (cx - span, cy), (cx + span, cy), 2)
@@ -475,6 +486,7 @@ def _sparkle(surface, x, y, size, color) -> None:
 
 
 def _draw_lid(surface, glass) -> None:
+    """Tapa rosada encima del vaso si el pedido pedía tapa."""
     cap = pygame.Rect(glass.x - 4, glass.y - 16, glass.w + 8, 22)
     pygame.draw.ellipse(surface, (48, 28, 72), cap.move(0, 3))
     pygame.draw.ellipse(surface, (255, 92, 156), cap)
@@ -487,6 +499,7 @@ def _draw_lid(surface, glass) -> None:
 
 
 def _draw_flask_stickers(surface, glass, time, toppings) -> None:
+    """Pega la etiqueta de seguridad y/o el sello de calidad en el vaso, si los pediste."""
     if "safety" in toppings:
         sticker = pygame.Surface((72, 86), pygame.SRCALPHA)
         pygame.draw.rect(sticker, (40, 18, 12, 90), (4, 8, 62, 74), border_radius=10)
@@ -519,6 +532,7 @@ def _draw_flask_stickers(surface, glass, time, toppings) -> None:
 
 
 def _agitator(surface, glass, liquid_top, angle, mixing) -> None:
+    """Motor y paletas del batidor. Si mixing es True, el LED se pone verde y las paletas giran."""
     cx = glass.centerx
     housing = pygame.Rect(cx - 34, glass.y - 48, 68, 38)
     pygame.draw.rect(surface, (36, 28, 48), housing.move(0, 4), border_radius=14)

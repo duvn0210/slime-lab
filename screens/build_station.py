@@ -1,16 +1,16 @@
 """
-screens/build_station.py — estación BUILD (formulación).
+Segunda pantalla: armas la receta, como dosificar en el lab.
 
-Para qué sirve:
-    Tres sliders (polímero, agente [A], RPM) y la paleta de colorante.
-    Cada movimiento llama state.update_recipe. Confirmar pone confirmed=True
-    para que MIX pueda girar. Si después mueves un slider, se borra MIX.
+Tres barras verticales:
+  - Polímero: el “polvo” que da cuerpo
+  - Agente: lo que entrecruza (hace gel); si pones mucho también diluye un poco
+  - Velocidad: RPM del agitador. Alta = el slime se siente más líquido
 
-Conectado con:
-    - game_state.update_recipe / set_color / confirm
-    - physics.nivel_visual y estado_reologico (solo para el vaso)
-    - ui_components.CustomSlider y Beaker
-    - settings  rangos POLYMER_*, AGENT_*, RPM_*
+A la derecha eliges el colorante. Abajo Confirmas. Hasta que no confirmes,
+en MIX el agitador no gira.
+
+Ojo: si después de confirmar vuelves y mueves un slider, se borra la mezcla.
+Es como cambiar la receta a mitad de batir: hay que empezar de nuevo.
 """
 
 from __future__ import annotations
@@ -37,6 +37,7 @@ from ui_components import Beaker, Button, CustomSlider, draw_candy_button
 
 class BuildStation(BaseScreen):
     def __init__(self, app) -> None:
+        """Crea los 3 sliders, el vaso, el botón Confirmar y los 6 colorantes."""
         super().__init__(app)
         recipe = self.state.recipe
         track_top = TOP_BAR_H + 112
@@ -67,12 +68,14 @@ class BuildStation(BaseScreen):
             y += 48
 
     def on_enter(self) -> None:
+        """Al entrar a BUILD, los sliders se ponen como está guardado en la libreta."""
         recipe = self.state.recipe
         self.slider_by_key["polymer"].value = recipe.polymer
         self.slider_by_key["agent"].value = recipe.agent
         self.slider_by_key["rpm"].value = recipe.rpm
 
     def handle_event(self, event) -> None:
+        """Arrastrar sliders, elegir color o pulsar Confirmar."""
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             for slider in self.sliders:
                 if slider.hit.collidepoint(event.pos):
@@ -94,7 +97,7 @@ class BuildStation(BaseScreen):
             self.active = None
 
     def _push(self) -> None:
-        """Copia los tres sliders al GameState (y puede invalidar la mezcla)."""
+        """Guarda los tres sliders en la libreta. Si cambiaron, la mezcla anterior se tira."""
         self.state.update_recipe(
             polymer=self.slider_by_key["polymer"].value,
             agent=self.slider_by_key["agent"].value,
@@ -102,6 +105,7 @@ class BuildStation(BaseScreen):
         )
 
     def draw(self, surface) -> None:
+        """Pinta sliders, vaso, colorantes y el botón de confirmar."""
         self.assets.blit_background(surface)
         draw_reminder(surface, self.assets.sm, self.state.order, self.state.service_time)
         for slider in self.sliders:
@@ -125,6 +129,7 @@ class BuildStation(BaseScreen):
         self.confirm.draw(surface, self.assets.md, self.app.mouse)
 
     def _draw_colors(self, surface) -> None:
+        """Los 6 botones de colorante a la derecha. El elegido se ve marcado."""
         blit(surface, self.assets.md, "Colorante", C["white"], (720, TOP_BAR_H + 64), "center", C["shadow"])
         selected = self.state.recipe.color
         for key, rect in self.color_rects.items():

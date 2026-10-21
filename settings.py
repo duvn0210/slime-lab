@@ -1,22 +1,16 @@
 """
-settings.py — todos los números “mágicos” del juego en un solo sitio.
+Esta es la lista de números del juego. No hay cuentas aquí: solo valores
+que el resto del programa consulta, como un recetario.
 
-Para qué sirve:
-    Tamaño de ventana, rangos de sliders, constantes de la física SET B,
-    bandas de viscosidad, paleta de colores, textos de estaciones.
-    Si el profesor pregunta “¿de dónde salen 4.80–8.80 Pa·s?”, la respuesta es
-    VISCOSITY_BANDS aquí. No hay que buscar números sueltos en las pantallas.
+Si el profesor pregunta “¿por qué viscosidad alta es de 4.80 a 8.80?”,
+se lo mostramos en VISCOSITY_BANDS, más abajo. Esos rangos los inventamos
+para que el juego se sienta bien; no salieron de un laboratorio real.
 
-Conectado con:
-    - physics_engine.py  (usa C_BASE, K_*, MIX_TAU_*, bandas, puntaje)
-    - game_state.py      (colores, adornos, bandas para etiquetas)
-    - main.py y screens/ (WIDTH, HEIGHT, FPS, paleta C, STATION_ORDER)
-    - ui_components.py   (colores C)
-
-No calcula nada: solo guarda constantes.
+También están: tamaño de la ventana, hasta dónde llegan los sliders,
+colores de los botones y cuántos puntos vale cada cosa.
 """
 
-# Resolución de pantalla a la que se escala el fondo.
+# Tamaño de la ventana en píxeles. FPS = cuántas veces por segundo se redibuja (como un flipbook).
 WIDTH = 1024
 HEIGHT = 600
 FPS = 60
@@ -26,7 +20,7 @@ BOTTOM_BAR_H = 68
 REMINDER_Y = 54
 REMINDER_H = 30
 
-# Polímero base, agente entrecruzante y agitación.
+# Hasta dónde puedes mover cada slider en BUILD.
 POLYMER_MIN = 1.0
 POLYMER_MAX = 10.0
 AGENT_MIN = 0.01
@@ -40,7 +34,7 @@ C_BASE = 10.0
 V_SOLVENT = 15.0
 V_AGENT_SCALE = 10.0
 
-# Ley de potencia. K crece con C_final y con [A]; n baja al entrecruzar (pseudoplástico).
+# Números de la fórmula “cuanto más agitas, más líquido se siente” (pseudoplástico).
 K_PREFACTOR = 1.2
 K_EXPONENT = 1.05
 K_AGENT_GAIN = 3.5
@@ -52,12 +46,11 @@ N_MAX = 0.90
 GAMMA_PER_RPM = 0.15
 GAMMA_MIN = 0.20
 
-# Transitorio de mezclado: μ(t) = μ_eq * (1 - exp(-t / τ)), con τ más corto a más RPM.
-# A RPM mínimas el τ no debe superar ~5 s: si no, la curva parece rota.
+# Qué tan rápido sube la curva azul. Con RPM bajas tarda un poco más, pero no tanto como para aburrir.
 MIX_TAU_BASE = 2.0
 MIX_TAU_RPM = 30.0
 
-# Bandas de control de calidad (Pa·s). Centros alineados con fórmulas intuitivas.
+# Qué tan espeso pidió el cliente. Pa·s = unidad de viscosidad. El “centro” da más puntos.
 VISCOSITY_BANDS = {
     "baja": {"label": "Baja", "low": 0.50, "high": 1.50, "center": 0.95},
     "media": {"label": "Media", "low": 1.85, "high": 3.40, "center": 2.50},
@@ -123,7 +116,7 @@ DECORATIONS = {
     "lid": "Tapa personalizada",
 }
 
-# RESULT no está aquí: no se navega con las flechas como una estación más.
+# Orden de las hojas al usar las flechas. La nota (result) no está: no se “hojea”, se llega al entregar.
 STATION_ORDER = ("order", "build", "mix", "top")
 
 STATION_META = {

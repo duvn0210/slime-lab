@@ -1,24 +1,20 @@
 """
-game_state.py — la memoria del partido (el “modelo”).
+Este archivo es la libreta del laboratorio: recuerda TODO lo que va pasando
+en un pedido, pero no dibuja nada y no hace las cuentas de viscosidad.
 
-Para qué sirve:
-    Guarda lo que el jugador va haciendo: pedido del cliente, sliders, si ya
-    confirmó, si ya detuvo MIX, adornos puestos, monedas y el último reporte.
-    No dibuja y no tiene las fórmulas de μ (eso es physics_engine).
+Qué guarda, en cristiano:
+  - Qué pidió el cliente (color, si lo quiere espeso o líquido, adornos)
+  - Qué pusiste en los sliders y qué colorante elegiste
+  - Si ya diste “Confirmar formulación”
+  - Cuánto tiempo llevas mezclando y en qué viscosidad te detuviste
+  - Qué stickers le pusiste al vaso
+  - Cuántas monedas tienes y qué nota sacaste
 
-Conectado con:
-    - main.py crea UN GameState y lo comparte con todas las pantallas
-    - screens/* leen y escriben self.state
-    - deliver() llama a physics.calcular_puntuaciones
+Las 5 pantallas leen y escriben AQUÍ. Por eso si cambias un slider en BUILD,
+MIX se entera: no hay copias distintas, hay una sola libreta.
 
-Ciclo que deben poder explicar:
-    sliders → update_recipe (si cambian, se pierde MIX)
-    color → set_color
-    Confirmar → confirmed=True, reset_mix
-    MIX avanza mix_time / push_sample
-    Detener → lock_mix (achieved_mu)
-    TOP → applied (set de adornos)
-    Entregar → deliver → last_report
+Ojo importante para el profesor: si vuelves a BUILD y mueves un slider,
+el juego borra la mezcla a propósito. No puedes “arreglar” el slime a escondidas.
 """
 
 from __future__ import annotations
@@ -41,7 +37,11 @@ CLIENT_NAMES = {
 
 @dataclass
 class Order:
-    """Pedido del cliente. viscosity es la clave 'baja'|'media'|'alta', no un número."""
+    """
+    El ticket del cliente.
+    viscosity no es un número: es la palabra 'baja', 'media' o 'alta'.
+    El rango en Pa·s de esa palabra está en settings.py.
+    """
     number: int
     color: str
     viscosity: str
@@ -51,20 +51,27 @@ class Order:
 
     @property
     def color_label(self) -> str:
+        """Texto lindo para el ticket: 'Rosa' en vez de 'rosa'."""
         return COLOR_LABELS[self.color]
 
     @property
     def viscosity_label(self) -> str:
+        """'Baja', 'Media' o 'Alta' para mostrar en pantalla."""
         return VISCOSITY_BANDS[self.viscosity]["label"]
 
     @property
     def decoration_label(self) -> str:
+        """Lista de adornos en español, juntos con comas: 'Brillo, Tapa'."""
         return ", ".join(DECORATIONS[key] for key in self.decorations)
 
 
 @dataclass
 class Recipe:
-    """Lo que el jugador eligió en BUILD. confirmed=False hasta pulsar Confirmar."""
+    """
+    Lo que tú formulaste: cuánto polímero, cuánto agente, qué tan rápido agitas
+    y de qué color. confirmed empieza en no; pasa a sí cuando pulsas Confirmar.
+    MIX no empieza a girar hasta que confirmed sea sí.
+    """
     polymer: float = 5.0
     agent: float = 0.20
     rpm: float = 80.0
@@ -74,27 +81,33 @@ class Recipe:
 
 @dataclass
 class GameState:
+    """La libreta: un pedido, tu receta, la mezcla y la nota. Todas las pantallas leen de aquí."""
     coins: int = 0
     best: int = 0
     order_number: int = 0
     order: Order | None = None
     recipe: Recipe = field(default_factory=Recipe)
-    mix_time: float = 0.0  # segundos mezclando (solo si confirmed y no locked)
-    mix_locked: bool = False  # True = ya pulsó Detener; μ queda fija
-    current_mu: float = 0.0  # μ ahora en MIX
-    achieved_mu: float | None = None  # μ que entra al QC (al detener)
-    history: list[tuple[float, float]] = field(default_factory=list)  # puntos (t, μ) de la gráfica
-    applied: set[str] = field(default_factory=set)  # adornos en TOP
-    service_time: float = 0.0  # reloj del pedido (main lo suma)
-    last_report: dict | None = None  # lo que pinta RESULT
+    mix_time: float = 0.0  # cuántos segundos lleva el agitador girando
+    mix_locked: bool = False  # True = ya pulsé Detener; la viscosidad queda congelada
+    current_mu: float = 0.0  # viscosidad de AHORA (la línea azul)
+    achieved_mu: float | None = None  # viscosidad que se usa en la nota (al detener)
+    history: list[tuple[float, float]] = field(default_factory=list)  # puntos para dibujar la gráfica
+    applied: set[str] = field(default_factory=set)  # adornos puestos (brillo, tapa, etc.)
+    service_time: float = 0.0  # reloj del pedido; si tardas mucho, restan puntos
+    last_report: dict | None = None  # la nota que se ve en la última pantalla
     _sample_acc: float = 0.0
 
     def __post_init__(self) -> None:
+        """Al crear la libreta, si no hay pedido todavía, arma el primero."""
         if self.order is None:
             self.new_order()
 
     def new_order(self) -> Order:
-        """Pedido 1 es tutorial (rosa, alta, glitter). Luego color/banda/adornos al azar."""
+        """
+        Empieza un pedido nuevo.
+        El primero siempre es tutorial: slime rosa, viscosidad alta y brillo.
+        Los siguientes salen al azar (color, espesor y 1 o 2 adornos).
+        """
         self.order_number += 1
         sprite = self._pick_sprite()
         if self.order_number == 1:
@@ -125,13 +138,18 @@ class GameState:
         return self.order
 
     def _pick_sprite(self) -> str:
+        """Elige un cliente al azar, sin repetir el de recién para que no se vea el mismo dos veces."""
         pool = list(CLIENT_SPRITES)
         if self.order is not None and self.order.sprite in pool and len(pool) > 1:
             pool.remove(self.order.sprite)
         return random.choice(pool)
 
     def update_recipe(self, polymer: float, agent: float, rpm: float) -> None:
-        """BUILD llama esto al mover sliders. Si cambian, se invalida MIX a propósito."""
+        """
+        Se llama cada vez que mueves un slider.
+        Si cambiaste polímero, agente o RPM, el juego dice: “esa mezcla ya no vale”
+        y te obliga a confirmar y mezclar otra vez. Es a propósito, no un bug.
+        """
         changed = (
             abs(self.recipe.polymer - polymer) > 1e-6
             or abs(self.recipe.agent - agent) > 1e-6
@@ -146,15 +164,18 @@ class GameState:
             self.applied.clear()
 
     def set_color(self, color: str) -> None:
+        """Guarda el colorante que tocaste (rosa, azul, etc.)."""
         self.recipe.color = color
 
     def confirm(self) -> None:
+        """Botón Confirmar formulación: a partir de aquí MIX puede empezar a girar."""
         if self.recipe.confirmed:
             return
         self.recipe.confirmed = True
         self.reset_mix()
 
     def reset_mix(self) -> None:
+        """Borra el tiempo de mezcla, la gráfica y la viscosidad congelada. Mezcla de cero."""
         self.mix_time = 0.0
         self.mix_locked = False
         self.current_mu = 0.0
@@ -163,6 +184,7 @@ class GameState:
         self._sample_acc = 0.0
 
     def push_sample(self, mu: float, dt: float) -> None:
+        """Guarda un puntito (tiempo, viscosidad) para dibujar la gráfica azul de MIX."""
         self.current_mu = mu
         self._sample_acc += dt
         if self._sample_acc >= 0.05 or not self.history:
@@ -172,18 +194,25 @@ class GameState:
                 self.history = self.history[::2]
 
     def lock_mix(self) -> None:
-        """Congela μ. El QC usa achieved_mu, no el equilibrio de la fórmula."""
+        """
+        Botón Detener Mezcla: copia la viscosidad de ahora y la deja fija.
+        La nota usa ESA cifra, no “a dónde habría llegado si esperabas más”.
+        """
         self.mix_locked = True
         self.achieved_mu = self.current_mu
 
     def toggle_decoration(self, key: str) -> None:
+        """Si el adorno ya estaba, lo quita; si no, lo pone. Un clic en TOP."""
         if key in self.applied:
             self.applied.remove(key)
         else:
             self.applied.add(key)
 
     def deliver(self, physics) -> dict:
-        """TOP llama esto al entregar. physics hace las cuentas; aquí solo se guardan."""
+        """
+        Entregar Pedido. Le pasa a la calculadora (physics) el color, la viscosidad
+        detenida, los adornos y el tiempo. Guarda la nota y suma monedas.
+        """
         report = physics.calcular_puntuaciones(
             color_pedido=self.order.color,
             color_obtenido=self.recipe.color,

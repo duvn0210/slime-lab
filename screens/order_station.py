@@ -1,16 +1,13 @@
 """
-screens/order_station.py — estación ORDER (la primera que se ve).
+Primera pantalla: el cliente te entrega el pedido.
 
-Para qué sirve:
-    Muestra al cliente (PNG) y el ticket: color, viscosidad, adornos.
-    No cambia la receta. El botón Manual NO es otra estación: pone
-    app.manual = True y main.py dibuja el overlay.
+Aquí no se fabrica nada. Solo se lee la libreta (game_state) y se pinta:
+  - la foto del cliente
+  - una tarjeta con color, si lo quiere espeso o líquido, y los adornos
 
-Conectado con:
-    - main.py  screens["order"], current empieza en "order"
-    - game_state.order  (qué pide el cliente)
-    - assets_loader.draw_customer
-    - settings.VISCOSITY_BANDS para el rango en Pa·s
+El botón “Manual de Fórmulas” no es otra hoja del cuaderno. Es un folleto
+que se pone encima; mientras está abierto, el reloj del pedido no corre.
+Eso lo dibuja main.py, no este archivo.
 """
 
 from __future__ import annotations
@@ -24,16 +21,19 @@ from ui_components import Button, draw_card
 
 class OrderStation(BaseScreen):
     def __init__(self, app) -> None:
+        """Prepara el rectángulo de la tarjeta y el botón del Manual."""
         super().__init__(app)
         self.card = pygame.Rect(318, 58, 430, 268)
         self.manual = Button(pygame.Rect(368, 338, 330, 44), "Manual de Fórmulas", (46, 132, 214))
 
     def handle_event(self, event) -> None:
-        # Clic en Manual: main dibuja el libro y pausa el reloj.
+        """Si haces clic en Manual, se abre el folleto (el reloj se pausa)."""
+        # Tocaste Manual: se abre el folleto y el cronómetro se pausa.
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and self.manual.hit(event.pos):
             self.app.manual = True
 
     def draw(self, surface) -> None:
+        """Pinta fondo, cliente, ticket y el botón Manual."""
         self.assets.blit_background(surface)
         order = self.state.order
         self.assets.draw_customer(surface, order, mood="ok")
@@ -41,6 +41,7 @@ class OrderStation(BaseScreen):
         self.manual.draw(surface, self.assets.md, self.app.mouse)
 
     def _draw_ticket(self, surface, order) -> None:
+        """La tarjeta rosa: color, viscosidad y adornos que pidió este cliente."""
         card = self.card
         draw_card(surface, card, (255, 252, 255), 22, (232, 196, 214), 3)
         header = pygame.Rect(card.x, card.y, card.w, 52)

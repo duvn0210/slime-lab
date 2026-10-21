@@ -1,23 +1,20 @@
 """
-main.py — PUNTO DE ENTRADA. Arranca con: python main.py
+Este archivo es el que se corre para abrir el juego.
 
-Para qué sirve:
-    Crea la ventana Pygame y el objeto SlimeLab, que es el “controlador”:
-    posee assets, physics, state y el dict de pantallas. El bucle run()
-    corre a 60 FPS: eventos → update → draw.
+Piensa en el juego como un cuaderno con 5 hojas (ORDER, BUILD, MIX, TOP y
+la nota). Este archivo es la persona que:
+  - abre la ventana
+  - mira qué hoja está abierta
+  - escucha clics y teclas
+  - pide a esa hoja que se dibuje de nuevo, muchas veces por segundo
 
-    Cambiar de interfaz NO abre otro programa: solo cambia self.current
-    ("order", "build", "mix", "top", "result") y se dibuja otra clase.
+No hace las cuentas de viscosidad ni pone la nota. Solo dirige el tráfico.
 
-Conectado con:
-    - screens/*     se instancian aquí y reciben self (la app)
-    - game_state    una sola memoria para todas
-    - physics_engine  una sola calculadora
-    - assets_loader   fondo, fuentes, clientes
-    - settings        WIDTH, HEIGHT, FPS, STATION_ORDER
-    - ui_components   botones de la barra
+Las 5 hojas viven en la carpeta screens/. La memoria (qué pidió el cliente,
+qué sliders moviste) vive en game_state.py. Las fórmulas viven en
+physics_engine.py.
 
-No calcula μ ni el puntaje. Eso es physics_engine.
+Para jugar: python main.py   (o el botón F5 en Visual Studio)
 """
 
 from __future__ import annotations
@@ -53,17 +50,20 @@ from settings import (
 
 
 class SlimeLab:
-    """La app. Todas las estaciones guardan una referencia a esta instancia."""
+    """El juego entero. Las 5 pantallas le preguntan a este objeto: ¿qué hay de pedido? ¿qué hora es?"""
 
     def __init__(self) -> None:
+        """Abre la ventana, carga fotos, crea la calculadora, la libreta y las 5 pantallas."""
         pygame.init()
         pygame.display.set_caption("Slime Lab")
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         self.clock = pygame.time.Clock()
-        # Tres objetos compartidos + cinco estaciones. Esto es el “enchufe”.
+        # Tres “cajones” que todas las pantallas usan:
+        # dibujos, calculadora de viscosidad, y lo que el jugador ha hecho.
         self.assets = AssetLoader()
         self.physics = SlimePhysics()
         self.state = GameState()
+        # Las 5 hojas del cuaderno. current dice cuál se está viendo.
         self.screens = {
             "order": OrderStation(self),
             "build": BuildStation(self),
@@ -106,17 +106,19 @@ class SlimeLab:
         self._set_icon()
 
     def _set_icon(self) -> None:
+        """El iconito rosa de la ventana (la gota de slime)."""
         icon = pygame.Surface((32, 32), pygame.SRCALPHA)
         pygame.draw.circle(icon, C["pink"], (16, 18), 12)
         pygame.draw.rect(icon, (255, 255, 255), (13, 4, 6, 8), border_radius=2)
         pygame.display.set_icon(icon)
 
     def notify(self, text: str) -> None:
+        """Muestra un avisito amarillo un par de segundos (ej. 'Confirma la formulación')."""
         self.toast = text
         self.toast_ttl = 2.8
 
     def go(self, name: str) -> None:
-        """Cambia la estación activa. Desde RESULT hay que usar Nuevo Pedido."""
+        """Pasa a otra hoja (order, build, mix, top). Si ya viste la nota, no te deja volver atrás."""
         if self.current == "result" and name != "result":
             self.notify("Cierra el reporte con Nuevo Pedido.")
             return
@@ -126,14 +128,18 @@ class SlimeLab:
         self.screens[name].on_enter()
 
     def next_order(self) -> None:
-        """RESULT → pedido nuevo y vuelta a ORDER."""
+        """Botón Nuevo Pedido: limpia la receta y vuelve a la hoja del cliente."""
         self.state.new_order()
         self.current = "order"
         self.screens["build"].on_enter()
         self.screens["result"].on_enter()
 
     def run(self) -> None:
-        """Bucle de juego. dt está topeado a 0.05 s por si la ventana se congela."""
+        """
+        El corazón del juego: un ciclo que no para hasta que cierras la ventana.
+        En cada vueltita (unas 60 por segundo) pregunta: ¿hubo un clic? ¿hay que
+        mover el agitador? ¿qué hay que pintar?
+        """
         while self.running:
             dt = min(0.05, self.clock.tick(FPS) / 1000.0)
             self.mouse = pygame.mouse.get_pos()
@@ -144,14 +150,15 @@ class SlimeLab:
                 self.time += dt
                 self.screens[self.current].update(dt)
                 if self.current != "result":
-                    self.state.service_time += dt  # reloj del QC; se para con pausa/manual
+                    # Reloj del pedido. Si abres el manual o la pausa, este reloj se detiene.
+                    self.state.service_time += dt
             if self.toast_ttl > 0:
                 self.toast_ttl = max(0.0, self.toast_ttl - dt)
             self._draw()
         pygame.quit()
 
     def _dispatch(self, event) -> None:
-        """Reparte el evento: primero cromo/pausa/manual, si no la estación actual."""
+        """Decide quién atiende el clic o la tecla: ¿la barra de menú, la pausa, o la hoja actual?"""
         if event.type == pygame.QUIT:
             self.running = False
             return
@@ -167,10 +174,11 @@ class SlimeLab:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             if self._chrome_click(event.pos):
                 return
-        # Si el clic no fue de la barra, lo atiende ORDER/BUILD/MIX/TOP/RESULT.
+        # Si no tocaste la barra de abajo, el clic es para la hoja que estás viendo.
         self.screens[self.current].handle_event(event)
 
     def _on_key(self, event) -> None:
+        """Teclas: Esc pausa, 1–4 cambian de hoja, flechas adelante/atrás, Espacio detiene MIX."""
         if event.key == pygame.K_ESCAPE:
             if self.manual:
                 self.manual = False
@@ -197,6 +205,7 @@ class SlimeLab:
             self.screens["mix"].toggle_lock()
 
     def _chrome_click(self, pos) -> bool:
+        """¿El clic fue en la barra (MENÚ, ORDER, pausa, volumen, flechas)? Si sí, lo atiende aquí."""
         if self.menu_rect.collidepoint(pos) or self.bottom_pause_rect.collidepoint(pos):
             self.paused = True
             return True
@@ -216,6 +225,7 @@ class SlimeLab:
         return False
 
     def _back(self) -> None:
+        """Flecha izquierda: una hoja hacia atrás (de MIX a BUILD, etc.)."""
         if self.current not in STATION_ORDER:
             return
         index = STATION_ORDER.index(self.current)
@@ -223,6 +233,7 @@ class SlimeLab:
             self.go(STATION_ORDER[index - 1])
 
     def _forward(self) -> None:
+        """Flecha derecha: una hoja hacia adelante. En la nota, arranca un pedido nuevo."""
         if self.current == "result":
             self.next_order()
             return
@@ -233,6 +244,7 @@ class SlimeLab:
             self.go(STATION_ORDER[index + 1])
 
     def _on_pause_click(self, event) -> None:
+        """Clics del menú de pausa: reanudar, abrir el manual o salir del juego."""
         if event.type != pygame.MOUSEBUTTONDOWN or event.button != 1:
             return
         if self.pause_actions["resume"].collidepoint(event.pos):
@@ -244,13 +256,14 @@ class SlimeLab:
             self.running = False
 
     def _on_manual_click(self, event) -> None:
+        """Clic en la X o fuera del folleto: cierra el Manual de Fórmulas."""
         if event.type != pygame.MOUSEBUTTONDOWN or event.button != 1:
             return
         if self.manual_close.collidepoint(event.pos) or not self.manual_card.collidepoint(event.pos):
             self.manual = False
 
     def _draw(self) -> None:
-        # Orden: fondo → contenido de la estación → barras → toasts → overlays.
+        """Pinta un cuadro completo: fondo, hoja actual, barras, avisos, pausa o manual."""
         self.assets.draw_station(self.screen, self.current)
         self.screens[self.current].draw(self.screen)
         self._draw_topbar()
@@ -264,6 +277,7 @@ class SlimeLab:
         pygame.display.flip()
 
     def _draw_topbar(self) -> None:
+        """Barra de arriba: título, monedas y flechas para cambiar de estación."""
         bar = pygame.Surface((WIDTH, TOP_BAR_H), pygame.SRCALPHA)
         bar.fill((22, 12, 36, 235))
         self.screen.blit(bar, (0, 0))
@@ -276,7 +290,7 @@ class SlimeLab:
         self._draw_nav_arrow(self.next_rect, 1)
 
     def _draw_nav_arrow(self, rect, direction: int) -> None:
-        """Flecha de estación al estilo del mockup: placa blanca y chevron coral."""
+        """Dibuja una flechita coral (izquierda o derecha) para pasar de hoja."""
         hover = rect.collidepoint(self.mouse)
         body = rect.move(0, -1) if hover else rect
         radius = 14
@@ -296,9 +310,11 @@ class SlimeLab:
         pygame.draw.lines(self.screen, (176, 40, 86), True, points, 3)
 
     def _round_button(self, rect, color) -> None:
+        """Atajo para pintar un botón redondeado (casi no se usa; quedó de apoyo)."""
         draw_candy_button(self.screen, rect, color, self.mouse, radius=min(14, rect.h // 2))
 
     def _draw_bottombar(self) -> None:
+        """Barra de abajo: MENÚ, ORDER, BUILD, MIX, TOP, pausa y volumen."""
         bar = pygame.Surface((WIDTH, BOTTOM_BAR_H), pygame.SRCALPHA)
         bar.fill((18, 10, 30, 245))
         self.screen.blit(bar, (0, HEIGHT - BOTTOM_BAR_H))
@@ -322,6 +338,7 @@ class SlimeLab:
         self._speaker((sound_body.centerx, sound_body.y + int(sound_body.h * 0.38)), self.sound_on)
 
     def _draw_order_badge(self) -> None:
+        """Estrellita verde con el número de pedido, al lado del botón ORDER."""
         anchor = self.nav["order"]
         center = (anchor.x - 6, anchor.y + 10)
         number = str(self.state.order.number)
@@ -331,6 +348,7 @@ class SlimeLab:
         blit(self.screen, font, number, (36, 120, 48), center, "center")
 
     def _station_button(self, rect, title, subtitle, color, active, badge=None, star=False) -> None:
+        """Un botón de estación (ORDER, BUILD…). Si es la hoja actual, se ve más levantado."""
         drawn = draw_candy_button(
             self.screen,
             rect,
@@ -349,11 +367,13 @@ class SlimeLab:
             blit(self.screen, self.assets.tiny, badge, C["white"], center, "center")
 
     def _draw_pause_bars(self, center) -> None:
+        """Las dos rayitas blancas del botón de pausa."""
         x, y = center
         pygame.draw.rect(self.screen, C["white"], (x - 8, y - 8, 5, 16), border_radius=2)
         pygame.draw.rect(self.screen, C["white"], (x + 3, y - 8, 5, 16), border_radius=2)
 
     def _speaker(self, center, enabled) -> None:
+        """Dibuja el parlante. Si el sonido está apagado, le pone una rayita. Aún no hay audio real."""
         x, y = center
         pygame.draw.polygon(
             self.screen,
@@ -366,6 +386,7 @@ class SlimeLab:
             pygame.draw.line(self.screen, (255, 220, 230), (x + 3, y - 7), (x + 12, y + 7), 2)
 
     def _draw_toast(self) -> None:
+        """La cajita amarilla del medio con el mensaje corto."""
         image = self.assets.sm.render(self.toast, True, C["ink"])
         rect = pygame.Rect(0, 0, image.get_width() + 36, 36)
         rect.center = (WIDTH // 2, 280)
@@ -373,6 +394,7 @@ class SlimeLab:
         self.screen.blit(image, image.get_rect(center=rect.center))
 
     def _draw_pause(self) -> None:
+        """Oscurece la pantalla y muestra Reanudar / Manual / Salir."""
         self.screen.blit(self.dim, (0, 0))
         panel(self.screen, self.pause_card, C["paper"], C["ink"], radius=18)
         blit(self.screen, self.assets.lg, "Pausa", C["ink"], (self.pause_card.centerx, self.pause_card.y + 36), "center")
@@ -381,6 +403,7 @@ class SlimeLab:
         draw_button(self.screen, self.pause_actions["quit"], "Salir", self.assets.md, C["pink_deep"], self.mouse)
 
     def _draw_manual(self) -> None:
+        """Pinta el folleto de fórmulas encima del juego."""
         self.screen.blit(self.dim, (0, 0))
         panel(self.screen, self.manual_card, C["paper"], C["ink"], radius=18)
         blit(self.screen, self.assets.lg, "Manual de Fórmulas", C["ink"], (self.manual_card.centerx, self.manual_card.y + 28), "center")
@@ -402,6 +425,7 @@ class SlimeLab:
             y += 8
 
     def _manual_sections(self) -> list[tuple[str, str, str | None]]:
+        """Los 4 párrafos del manual: dilución, ley de potencia, bandas y cómo acertar."""
         bands = []
         for key in ("baja", "media", "alta"):
             band = VISCOSITY_BANDS[key]
@@ -431,9 +455,10 @@ class SlimeLab:
 
 
 def main() -> None:
+    """Crea el juego y entra al ciclo hasta que cierras la ventana."""
     SlimeLab().run()
 
 
-# Esto se ejecuta solo si corres este archivo, no si lo importas.
+# Esta línea significa: “si alguien abrió este archivo para jugar, arranca el juego”.
 if __name__ == "__main__":
     main()

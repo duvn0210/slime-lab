@@ -1,16 +1,10 @@
 """
-app_paths.py — dónde están las imágenes.
+Ayuda chiquita: “¿en qué carpeta están las fotos?”.
 
-Para qué sirve:
-    Devuelve la carpeta raíz del juego para cargar `assets/`.
-
-Conectado con:
-    - assets_loader.py (única quien lo usa hoy)
-    - main.py no lo llama directo
-
-Si alguien pregunta “¿por qué no Path(__file__) a secas?”:
-    En un .exe empaquetado __file__ no apunta a la carpeta del proyecto.
-    PyInstaller deja los archivos en sys._MEIPASS. Esta función cubre ambos casos.
+Normalmente es la carpeta del proyecto (donde está main.py).
+Si algún día el juego se empaqueta en un .exe, las fotos viajan dentro
+del programa; esta función también encuentra esa carpeta.
+Lo usa assets_loader.py al cargar fondo_slime.jpg y los clientes.
 """
 
 from __future__ import annotations
@@ -20,7 +14,7 @@ from pathlib import Path
 
 
 def resource_dir() -> Path:
-    """Carpeta que contiene `assets/` tanto al correr con Python como en un .exe."""
+    """Devuelve la carpeta donde está la carpeta assets (fotos del laboratorio y de los clientes)."""
     if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
         return Path(sys._MEIPASS)
     return Path(__file__).resolve().parent

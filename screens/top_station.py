@@ -1,15 +1,17 @@
 """
-screens/top_station.py — estación TOP (adornos y entrega).
+Cuarta pantalla: decoras el vaso y lo entregas.
 
-Para qué sirve:
-    Clic en una herramienta = pon/quita. Arrastrar al vaso = poner.
-    Entregar Pedido exige: confirmed + mix_locked + color. Entonces
-    state.deliver(physics) y saltamos a RESULT (main.current).
+Clic en un adorno = lo pones o lo quitas.
+Si lo arrastras hasta el vaso, también se pone.
+Las herramientas que el cliente pidió dicen “pedido” en la esquina.
 
-Conectado con:
-    - game_state.applied y deliver
-    - physics.calcular_puntuaciones (indirecto, vía deliver)
-    - order.decorations para marcar “pedido” en la herramienta
+Para entregar tienes que haber hecho los tres pasos de antes:
+  1. Confirmar la receta en BUILD
+  2. Detener la mezcla en MIX
+  3. Haber elegido un colorante
+Si falta uno, sale un avisito amarillo y no entrega.
+
+Al entregar se calcula la nota (en physics_engine) y pasas a la última hoja.
 """
 
 from __future__ import annotations
@@ -34,6 +36,7 @@ TOOL_ICON = {
 
 class TopStation(BaseScreen):
     def __init__(self, app) -> None:
+        """Coloca las 5 herramientas, el vaso y el botón Entregar Pedido."""
         super().__init__(app)
         left = ("safety", "seal", "glitter")
         right = ("stars", "lid")
@@ -57,6 +60,7 @@ class TopStation(BaseScreen):
         self.drag_moved = False
 
     def handle_event(self, event) -> None:
+        """Clic = poner/quitar adorno. Arrastrar al vaso = ponerlo. Entregar pide la nota."""
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             for key, rect in self.tools.items():
                 if rect.collidepoint(event.pos):
@@ -80,7 +84,7 @@ class TopStation(BaseScreen):
             self.drag = None
 
     def _deliver(self) -> None:
-        """Único lugar que pasa de TOP a RESULT. Si falta un paso, toast y no entrega."""
+        """Revisa que no falte nada, pide la nota y cambia a la pantalla de control de calidad."""
         if not self.state.recipe.confirmed:
             self.app.notify("Confirma la formulación en BUILD.")
             return
@@ -95,6 +99,7 @@ class TopStation(BaseScreen):
         self.app.screens["result"].on_enter()
 
     def draw(self, surface) -> None:
+        """Pinta herramientas, vaso con stickers y el botón verde de entregar."""
         self.assets.blit_background(surface)
         draw_reminder(surface, self.assets.sm, self.state.order, self.state.service_time)
         for key, rect in self.tools.items():
@@ -121,6 +126,7 @@ class TopStation(BaseScreen):
             surface.blit(icon, (self.drag_pos[0] - 24, self.drag_pos[1] - 24))
 
     def _draw_tool(self, surface, key, rect) -> None:
+        """Una herramienta. Si el cliente la pidió y no está, dice 'pedido'."""
         applied = key in self.state.applied
         needed = key in self.state.order.decorations
         fill = (232, 255, 236) if applied else C["white"]

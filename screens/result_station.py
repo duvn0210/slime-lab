@@ -1,14 +1,14 @@
 """
-screens/result_station.py — estación RESULT (la nota).
+Última pantalla: el reporte de control de calidad.
 
-Para qué sirve:
-    Solo muestra state.last_report. No se puede volver a BUILD/MIX:
-    main.go lo bloquea. Nuevo Pedido llama app.next_order().
+No se fabrica nada. Solo se lee la nota que se calculó al entregar.
+Desde aquí no puedes volver a MIX a “arreglar” el slime: hay que pulsar
+Nuevo Pedido y empezar otro cliente.
 
-Conectado con:
-    - game_state.last_report (lo llenó deliver)
-    - physics.calificacion ya viene en el dict
-    - assets_loader.draw_customer con mood sad/ok/happy según el total
+La cara del cliente:
+  - menos de 70: triste
+  - 70 a 89: normal
+  - 90 o más: muy feliz (y cae confeti)
 """
 
 from __future__ import annotations
@@ -24,6 +24,7 @@ from ui_components import Button, draw_card
 
 class ResultStation(BaseScreen):
     def __init__(self, app) -> None:
+        """Prepara la tarjeta de la nota y el botón Nuevo Pedido."""
         super().__init__(app)
         self.card = pygame.Rect(318, 58, 430, 338)
         self.next = Button(pygame.Rect(368, 412, 330, 44), "Nuevo Pedido", C["green"])
@@ -31,6 +32,7 @@ class ResultStation(BaseScreen):
         self.shown_coins = 0.0
 
     def on_enter(self) -> None:
+        """Al llegar aquí, si sacaste 90 o más, arma el confeti."""
         self.shown_coins = 0.0
         self.bits = []
         report = self.state.last_report
@@ -52,10 +54,12 @@ class ResultStation(BaseScreen):
             )
 
     def handle_event(self, event) -> None:
+        """Clic en Nuevo Pedido: limpia todo y vuelve al cliente."""
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and self.next.hit(event.pos):
             self.app.next_order()
 
     def update(self, dt: float) -> None:
+        """Anima las monedas subiendo y deja caer el confeti."""
         report = self.state.last_report
         if report:
             self.shown_coins = min(report["monedas"], self.shown_coins + max(1.0, report["monedas"] * dt * 1.8))
@@ -67,10 +71,11 @@ class ResultStation(BaseScreen):
                 bit["x"] = max(10, min(WIDTH - 10, bit["x"]))
 
     def draw(self, surface) -> None:
+        """Pinta cliente (feliz o triste), confeti, ticket de la nota y Nuevo Pedido."""
         self.assets.blit_background(surface)
         order = self.state.order
         report = self.state.last_report
-        # <70 triste, 70–89 la sonrisa del PNG, ≥90 sonrisa extra (overlay).
+        # Según la nota le dibujamos la boca: triste, normal o más sonriente.
         mood = "ok"
         if report:
             if report["total"] >= GRADE_EXCELLENT:
@@ -84,6 +89,7 @@ class ResultStation(BaseScreen):
         self.next.draw(surface, self.assets.md, self.app.mouse)
 
     def _draw_ticket(self, surface, report) -> None:
+        """La tarjeta: puntos de color, viscosidad, adornos, total y monedas."""
         card = self.card
         draw_card(surface, card, (255, 252, 255), 22, (232, 196, 214), 3)
         header = pygame.Rect(card.x, card.y, card.w, 52)

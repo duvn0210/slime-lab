@@ -1,20 +1,15 @@
 """
-assets_loader.py — carga de imágenes, fuentes e iconos.
+Aquí se cargan las fotos y las letras.
 
-Para qué sirve:
-    Pone el fondo (fondo_slime.jpg), escala los PNG de clientes y dibuja
-    una “hoja” de iconos de 48 px (moneda, matraz, glitter…). En Windows,
-    si no hay DejaVu, usa Arial.
+El laboratorio de fondo es una imagen (fondo_slime.jpg). Los clientes son
+dibujos PNG (Mia, Zack, Layla, Dr. Ben…). Los iconitos de moneda y matraz
+se dibujan a código, no son fotos.
 
-Conectado con:
-    - main.py crea un AssetLoader
-    - ORDER y RESULT llaman draw_customer
-    - app_paths.resource_dir  (carpeta assets/)
-    - settings WIDTH/HEIGHT
+Si estás en Windows y no existen las fuentes de Linux, usa Arial. Por eso
+el juego se ve bien en las dos computadoras.
 
-El vaso animado que se ve en BUILD/MIX/TOP NO está aquí: está en
-ui_components.Beaker. Abajo hay un draw_beaker viejo que las estaciones
-ya no usan; no confundirlo.
+Ojo: el vaso con slime que se mueve NO está en este archivo. Está en
+ui_components.py (la clase Beaker).
 """
 
 from __future__ import annotations
@@ -35,21 +30,25 @@ ICON_NAMES = ("coin", "flask", "glitter", "star", "seal", "safety", "lid", "drop
 
 
 def _font(path: str, size: int, fallback_bold: bool = False) -> pygame.font.Font:
+    """Carga una fuente. Si no está (pasa en Windows), usa Arial."""
     if os.path.exists(path):
         return pygame.font.Font(path, size)
     return pygame.font.SysFont("arial", size, bold=fallback_bold)
 
 
 def tint(color: tuple[int, int, int], amount: float, toward=(255, 255, 255)) -> tuple[int, int, int]:
+    """Aclara un color mezclándolo con blanco. Sirve para brillos del slime."""
     return tuple(int(color[i] * (1 - amount) + toward[i] * amount) for i in range(3))
 
 
 def shade(color: tuple[int, int, int], amount: float) -> tuple[int, int, int]:
+    """Oscurece un color. Sirve para sombras del líquido."""
     return tuple(max(0, int(color[i] * (1 - amount))) for i in range(3))
 
 
 class AssetLoader:
     def __init__(self) -> None:
+        """Carga fuentes, fondo, clientes e iconos una sola vez al abrir el juego."""
         self.xs = _font(FONT_REGULAR, 13)
         self.sm = _font(FONT_REGULAR, 14)
         self.md = _font(FONT_BOLD, 16, True)
@@ -69,14 +68,16 @@ class AssetLoader:
         )
 
     def _asset_path(self, name: str) -> Path:
+        """Ruta de un archivo dentro de la carpeta assets (fondo, fotos)."""
         return resource_dir() / "assets" / name
 
     def _load_background(self) -> pygame.Surface:
-        """Ilustración limpia del laboratorio, a tamaño de ventana."""
+        """Carga el fondo del laboratorio y lo agranda a 1024×600."""
         raw = pygame.image.load(str(self._asset_path("fondo_slime.jpg"))).convert()
         return pygame.transform.smoothscale(raw, (WIDTH, HEIGHT))
 
     def _load_clients(self) -> dict[str, pygame.Surface]:
+        """Carga y escala las 5 fotos de clientes."""
         files = {
             "customer": "customer.png",
             "mia": "client_mia.png",
@@ -101,16 +102,19 @@ class AssetLoader:
         return clients
 
     def blit_background(self, surface: pygame.Surface) -> None:
+        """Pega el fondo del laboratorio en la ventana."""
         surface.blit(self.background, (0, 0))
 
     def draw_station(self, surface: pygame.Surface, station: str) -> None:
+        """Pinta el fondo. El nombre de estación queda por si un día hay fondos distintos."""
         self.blit_background(surface)
 
     def draw_lab(self, surface: pygame.Surface, time: float) -> None:
+        """Igual que el fondo. Quedó de un diseño viejo; las pantallas usan blit_background."""
         self.blit_background(surface)
 
     def draw_customer(self, surface: pygame.Surface, order, mood: str = "ok") -> None:
-        """Sprite del cliente recortado, esquina inferior izquierda."""
+        """Pinta al cliente abajo a la izquierda, con su nombre. mood cambia la boca."""
         key = getattr(order, "sprite", "customer")
         sprite = self.clients.get(key, self.clients["customer"]).copy()
         self._apply_mood(sprite, key, mood)
@@ -127,6 +131,7 @@ class AssetLoader:
         surface.blit(label, chip)
 
     def _apply_mood(self, sprite, key: str, mood: str) -> None:
+        """Dibuja una boca triste o más sonriente encima de la foto, según la nota."""
         if mood == "ok":
             return
         mouth = {
@@ -150,6 +155,7 @@ class AssetLoader:
             pygame.draw.arc(sprite, (70, 32, 40), arc, math.pi + 0.2, math.tau - 0.2, 3)
 
     def draw_bubble(self, surface: pygame.Surface, x: int, y: int, time: float) -> None:
+        """Burbuja con un matraz. Quedó de un diseño viejo; ya no se usa en las estaciones."""
         radius = int(42 + math.sin(time * 3) * 2)
         tail = [(x - 4, y + radius - 12), (x + 12, y + radius - 8), (x - 16, y + radius + 20)]
         pygame.draw.polygon(surface, C["white"], tail)
@@ -171,6 +177,7 @@ class AssetLoader:
         mixing: bool = False,
         toppings: set[str] | None = None,
     ) -> pygame.Rect:
+        """Vaso viejo. El que se ve en el juego es Beaker en ui_components.py."""
         toppings = toppings or set()
         base_h = 34
         glass = pygame.Rect(rect.x, rect.y, rect.w, rect.h - base_h)
@@ -252,6 +259,7 @@ class AssetLoader:
         return glass
 
     def _draw_agitator(self, surface, glass, liquid, angle, mixing) -> None:
+        """Batidor del vaso viejo. El actual está en ui_components._agitator."""
         motor = pygame.Rect(glass.centerx - 22, glass.y - 34, 44, 26)
         pygame.draw.rect(surface, (70, 78, 96), motor, border_radius=6)
         pygame.draw.circle(surface, (255, 196, 64) if mixing else (150, 160, 170), (motor.centerx, motor.centery), 5)
@@ -265,7 +273,7 @@ class AssetLoader:
         pygame.draw.circle(surface, (60, 68, 82), (glass.centerx, yb), 4)
 
     def _make_background(self) -> pygame.Surface:
-        """Laboratorio cartoon dibujado a resolución de ventana, sin texto ni controles."""
+        """Dibujo a código del lab. Ya no se usa: el fondo es la foto fondo_slime.jpg."""
         surf = pygame.Surface((WIDTH, HEIGHT))
         top = (72, 54, 168)
         bot = (126, 176, 220)
@@ -285,6 +293,7 @@ class AssetLoader:
         return surf
 
     def _reactor(self, surf, rect, liquid, glow) -> None:
+        """Tanque de los lados del fondo dibujado. Solo lo usaba _make_background."""
         pygame.draw.rect(surf, (86, 48, 120), rect, border_radius=24)
         pygame.draw.rect(surf, (230, 220, 245), rect, width=4, border_radius=24)
         inner = rect.inflate(-28, -36)
@@ -298,6 +307,7 @@ class AssetLoader:
         pygame.draw.rect(surf, (70, 48, 96), (rect.centerx - 6, rect.y - 48, 12, 30))
 
     def _cabinet(self, surf, rect) -> None:
+        """Gabinete. Quedó de un fondo dibujado; hoy no se llama."""
         pygame.draw.rect(surf, (92, 48, 140), rect, border_radius=10)
         pygame.draw.rect(surf, (220, 200, 240), rect, width=3, border_radius=10)
         door = rect.inflate(-16, -18)
@@ -306,6 +316,7 @@ class AssetLoader:
         pygame.draw.circle(surf, C["gold"], (door.right - 10, door.centery), 4)
 
     def _pipes(self, surf) -> None:
+        """Tubitos del fondo dibujado. Hoy no se usan."""
         color = (236, 244, 255)
         pygame.draw.arc(surf, color, (150, 78, 200, 90), 0, math.pi, 6)
         pygame.draw.arc(surf, (255, 190, 220), (WIDTH - 360, 78, 200, 90), 0, math.pi, 6)
@@ -315,6 +326,7 @@ class AssetLoader:
         pygame.draw.circle(surf, (80, 80, 100), (190, 198), 8, 2)
 
     def _make_sheet(self) -> pygame.Surface:
+        """Dibuja todos los iconitos (moneda, matraz, brillo…) en una tira."""
         sheet = pygame.Surface((48 * len(ICON_NAMES), 48), pygame.SRCALPHA)
         for index, name in enumerate(ICON_NAMES):
             cell = pygame.Rect(index * 48, 0, 48, 48)
@@ -322,6 +334,7 @@ class AssetLoader:
         return sheet
 
     def _slice_icons(self) -> dict[str, pygame.Surface]:
+        """Recorta cada icono de 48×48 para poder pegarlo donde haga falta."""
         icons = {}
         for index, name in enumerate(ICON_NAMES):
             rect = pygame.Rect(index * 48, 0, 48, 48)
@@ -329,6 +342,7 @@ class AssetLoader:
         return icons
 
     def _star(self, surface, cx, cy, radius, color) -> None:
+        """Estrellita de 5 puntas. La usan los iconos y el brillo."""
         points = []
         for i in range(10):
             ang = -math.pi / 2 + i * math.pi / 5
@@ -337,6 +351,7 @@ class AssetLoader:
         pygame.draw.polygon(surface, color, points)
 
     def _triangle(self, surface, cx, cy, radius, color) -> None:
+        """Triángulo de advertencia (etiqueta de seguridad)."""
         points = []
         for i in range(3):
             ang = -math.pi / 2 + i * 2 * math.pi / 3
@@ -347,11 +362,13 @@ class AssetLoader:
         pygame.draw.circle(surface, (90, 50, 10), (cx, cy + 7), 1)
 
     def _icon_coin(self, sheet, cell) -> None:
+        """Icono de moneda (las que ves arriba a la derecha)."""
         pygame.draw.circle(sheet, C["gold"], cell.center, 16)
         pygame.draw.circle(sheet, (210, 150, 20), cell.center, 16, 3)
         pygame.draw.circle(sheet, (255, 236, 140), cell.center, 8, 2)
 
     def _icon_flask(self, sheet, cell) -> None:
+        """Icono de matraz. Sale en el ticket al lado del color."""
         cx, cy = cell.center
         pygame.draw.rect(sheet, (90, 180, 210), (cx - 5, cy - 16, 10, 12), border_radius=2)
         pygame.draw.polygon(sheet, (255, 255, 255), [(cx - 6, cy - 4), (cx + 6, cy - 4), (cx + 16, cy + 16), (cx - 16, cy + 16)])
@@ -359,27 +376,33 @@ class AssetLoader:
         pygame.draw.rect(sheet, C["pink"], (cx - 12, cy + 6, 24, 10))
 
     def _icon_glitter(self, sheet, cell) -> None:
+        """Icono de brillo / glitter."""
         pygame.draw.circle(sheet, (180, 90, 210), cell.center, 14)
         pygame.draw.circle(sheet, (255, 180, 230), cell.center, 8)
         self._star(sheet, cell.centerx - 10, cell.centery - 8, 5, C["gold"])
         self._star(sheet, cell.centerx + 12, cell.centery + 6, 4, C["white"])
 
     def _icon_star(self, sheet, cell) -> None:
+        """Icono de estrellas (adorno)."""
         self._star(sheet, cell.centerx, cell.centery, 16, C["gold"])
 
     def _icon_seal(self, sheet, cell) -> None:
+        """Icono del sello de calidad."""
         pygame.draw.circle(sheet, (64, 150, 230), cell.center, 16)
         pygame.draw.circle(sheet, C["white"], cell.center, 16, 3)
         pygame.draw.circle(sheet, (190, 230, 255), cell.center, 7)
 
     def _icon_safety(self, sheet, cell) -> None:
+        """Icono de la etiqueta de seguridad."""
         self._triangle(sheet, cell.centerx, cell.centery + 2, 18, (255, 186, 48))
 
     def _icon_lid(self, sheet, cell) -> None:
+        """Icono de la tapa del vaso."""
         pygame.draw.ellipse(sheet, (80, 90, 120), (cell.x + 6, cell.y + 16, 36, 16))
         pygame.draw.rect(sheet, (140, 150, 180), (cell.x + 14, cell.y + 10, 20, 12), border_radius=4)
 
     def _icon_drop(self, sheet, cell) -> None:
+        """Icono de gota. Sale en el ticket al lado de la viscosidad."""
         cx, cy = cell.center
         pygame.draw.circle(sheet, (80, 170, 230), (cx, cy + 4), 10)
         pygame.draw.polygon(sheet, (80, 170, 230), [(cx, cy - 14), (cx - 9, cy + 2), (cx + 9, cy + 2)])

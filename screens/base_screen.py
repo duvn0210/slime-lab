@@ -1,24 +1,16 @@
 """
-screens/base_screen.py — padre de las 5 estaciones + helpers de dibujo.
+El molde del que salen las 5 pantallas.
 
-Para qué sirve:
-    BaseScreen es lo que “conecta” cada interfaz con el resto del juego.
-    Toda estación hereda de aquí y recibe la app (main.SlimeLab). Por eso
-    self.state, self.physics y self.assets funcionan igual en ORDER o MIX.
+Imagina que cada estación es una hoja. Todas necesitan lo mismo:
+  - saber el pedido (self.state)
+  - pedir una cuenta de viscosidad (self.physics)
+  - pintar el fondo y las fotos (self.assets)
 
-    También hay funciones sueltas: blit (texto), panel, draw_reminder
-    (cinta del pedido en BUILD/MIX/TOP).
+En vez de copiar eso 5 veces, lo escribimos aquí. Cada estación dice
+“yo soy una BaseScreen” y ya puede usar esas tres cosas.
 
-Conectado con:
-    - main.py importa blit, panel, draw_button, wrap_text
-    - cada archivo de screens/*.py importa BaseScreen
-    - draw_reminder lee state.order y settings.VISCOSITY_BANDS
-
-Métodos que cada estación puede redefinir:
-    handle_event  clics/teclas de ESA pantalla
-    update(dt)    MIX y RESULT lo usan; las otras no
-    draw          pintar
-    on_enter      al cambiar de estación (BUILD sincroniza sliders)
+También hay ayuditas para escribir texto en pantalla (blit) y la cintita
+de arriba que recuerda el pedido y el reloj (draw_reminder).
 """
 
 from __future__ import annotations
@@ -31,6 +23,7 @@ from settings import C, DECORATIONS, TIME_GRACE_S, TOP_BAR_H, VISCOSITY_BANDS, W
 
 
 def blit(surface, font, msg, color, pos, anchor="topleft", shadow=None):
+    """Escribe un texto en la pantalla. anchor dice si se alinea al centro, izquierda, etc."""
     if shadow:
         shade = font.render(msg, True, shadow)
         rect = shade.get_rect()
@@ -44,6 +37,7 @@ def blit(surface, font, msg, color, pos, anchor="topleft", shadow=None):
 
 
 def panel(surface, rect, fill, border=None, radius=16, width=3):
+    """Dibuja una cajita redondeada (ticket, pausa, manual)."""
     if len(fill) == 4 or (border is not None and len(border) == 4):
         layer = pygame.Surface(rect.size, pygame.SRCALPHA)
         pygame.draw.rect(layer, fill, layer.get_rect(), border_radius=radius)
@@ -59,6 +53,7 @@ def panel(surface, rect, fill, border=None, radius=16, width=3):
 
 
 def left_click(event, rect) -> bool:
+    """¿Fue un clic izquierdo justo encima de este rectángulo? Sí o no."""
     return (
         event.type == pygame.MOUSEBUTTONDOWN
         and getattr(event, "button", None) == 1
@@ -67,6 +62,7 @@ def left_click(event, rect) -> bool:
 
 
 def draw_button(surface, rect, label, font, bg, mouse, enabled=True, fg=C["white"]):
+    """Pinta un botón con texto. Devuelve True si el mouse está encima."""
     from ui_components import draw_candy_button
 
     draw_candy_button(surface, rect, bg, mouse, label=label, font=font, enabled=enabled)
@@ -74,6 +70,7 @@ def draw_button(surface, rect, label, font, bg, mouse, enabled=True, fg=C["white
 
 
 def draw_star(surface, cx, cy, radius, color):
+    """Dibuja una estrellita (la del número de pedido)."""
     points = []
     for i in range(10):
         ang = -math.pi / 2 + i * math.pi / 5
@@ -83,6 +80,7 @@ def draw_star(surface, cx, cy, radius, color):
 
 
 def wrap_text(font, text, width):
+    """Parte un párrafo en varias líneas para que no se salga de la cajita."""
     lines = []
     for paragraph in text.split("\n"):
         words = paragraph.split()
@@ -102,6 +100,7 @@ def wrap_text(font, text, width):
 
 
 def fit_text(surface, font, text, color, pos, max_width, anchor="topleft", shadow=None):
+    """Escribe texto; si es muy largo, lo corta con … para que quepa."""
     shown = text
     while shown and font.size(shown)[0] > max_width:
         shown = shown[:-2].rstrip() + "…"
@@ -111,7 +110,7 @@ def fit_text(surface, font, text, color, pos, max_width, anchor="topleft", shado
 
 
 def draw_reference_card(surface, font, title: str) -> pygame.Rect:
-    """Tarjeta blanca con encabezado rosa, del mismo tamaño que la del mockup."""
+    """Tarjeta grande blanca con encabezado rosa. Quedó de un diseño viejo; las estaciones usan draw_card."""
     rect = pygame.Rect(384, 54, 612, 470)
     pygame.draw.rect(surface, (255, 255, 255), rect, border_radius=28)
     header = pygame.Rect(rect.x, rect.y, rect.w, 62)
@@ -123,7 +122,7 @@ def draw_reference_card(surface, font, title: str) -> pygame.Rect:
 
 
 def draw_reminder(surface, font, order, service_time: float) -> None:
-    """Barra superior con el pedido y el reloj. El reloj se pone naranja tras 120 s."""
+    """La tira de arriba en BUILD/MIX/TOP: “Pedido #1 · Rosa · Alta · Brillo” y el cronómetro."""
     band = VISCOSITY_BANDS[order.viscosity]
     rect = pygame.Rect(16, TOP_BAR_H + 6, WIDTH - 32, 34)
     panel(surface, rect, (255, 255, 255, 230), None, radius=12)
@@ -145,6 +144,7 @@ class VSlider:
     """Slider vertical: arriba es el máximo, con lectura digital."""
 
     def __init__(self, center_x, y, height, min_v, max_v, value, lines, unit, accent, decimals):
+        """Arma un slider viejo. BUILD usa CustomSlider de ui_components, no este."""
         self.track = pygame.Rect(center_x - 11, y, 22, height)
         self.hit = pygame.Rect(center_x - 36, y - 4, 72, height + 8)
         self.min_v = min_v
@@ -157,21 +157,25 @@ class VSlider:
         self.center_x = center_x
 
     def fraction(self) -> float:
+        """Qué tan llena está la barra, de 0 a 1."""
         span = self.max_v - self.min_v
         if span <= 0:
             return 0.0
         return max(0.0, min(1.0, (self.value - self.min_v) / span))
 
     def set_from_y(self, mouse_y: int) -> None:
+        """Mueve el valor según dónde está el mouse (arriba = máximo)."""
         span = max(1, self.track.h)
         t = 1.0 - (mouse_y - self.track.y) / span
         t = max(0.0, min(1.0, t))
         self.value = self.min_v + t * (self.max_v - self.min_v)
 
     def display(self) -> str:
+        """El numerito que se lee encima o debajo del slider, con su unidad."""
         return f"{self.value:.{self.decimals}f}{self.unit}"
 
     def draw(self, surface, font, small) -> None:
+        """Pinta el riel, el relleno y el numerito."""
         for index, line in enumerate(self.lines):
             if not line:
                 continue
@@ -191,7 +195,7 @@ class VSlider:
 
 
 def liquid_in_glass(surface, rect, color, fill, time, mixing=False) -> None:
-    """Columna de líquido apoyada en el fondo del vaso del mockup."""
+    """Dibujo viejo del líquido. El vaso actual es Beaker en ui_components.py."""
     fill = max(0.22, min(0.94, fill))
     liquid_h = max(18, int(rect.h * fill))
     layer = pygame.Surface(rect.size, pygame.SRCALPHA)
@@ -214,31 +218,39 @@ def liquid_in_glass(surface, rect, color, fill, time, mixing=False) -> None:
 
 
 class BaseScreen:
-    """Plantilla. `app` es el SlimeLab de main.py (una sola instancia)."""
+    """Molde. `app` es el juego que se abrió en main.py (hay uno solo)."""
 
     def __init__(self, app) -> None:
+        """Guarda el juego entero para poder preguntarle pedido, fotos y fórmulas."""
         self.app = app
 
     @property
     def state(self):
+        """Atajo: la libreta (pedido, receta, mezcla, nota)."""
         return self.app.state
 
     @property
     def assets(self):
+        """Atajo: fotos, fuentes e iconos."""
         return self.app.assets
 
     @property
     def physics(self):
+        """Atajo: la calculadora de viscosidad y de la nota."""
         return self.app.physics
 
     def handle_event(self, event) -> None:
+        """Cada hoja reescribe esto para atender sus clics. Por defecto no hace nada."""
         return None
 
     def update(self, dt: float) -> None:
+        """Se llama muchas veces por segundo. MIX lo usa para subir el espesor."""
         return None
 
     def draw(self, surface) -> None:
+        """Cada hoja reescribe esto para pintarse. Por defecto no pinta nada."""
         return None
 
     def on_enter(self) -> None:
+        """Se llama al pasar a esta hoja. BUILD lo usa para alinear los sliders."""
         return None
