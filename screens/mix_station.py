@@ -1,4 +1,3 @@
-# AI assisted development
 """Estación 3: agitador, curvas reológicas y parada de la mezcla."""
 
 from __future__ import annotations
@@ -99,7 +98,7 @@ class MixStation(BaseScreen):
             rpm=recipe.rpm,
         )
         ratio = 0.0 if eq["mu"] <= 0 else max(0.0, min(1.0, mu_now / eq["mu"]))
-        self.progress.draw(surface, ratio, self.assets.sm, "Medidor de progreso")
+        self.progress.draw(surface, ratio, self.assets.sm, "Avance al equilibrio")
         if self.state.mix_locked:
             self.stop.label = "Reiniciar mezcla"
             self.stop.color = C["blue"]
@@ -110,8 +109,16 @@ class MixStation(BaseScreen):
 
     def _draw_mu(self, surface, eq, band, mu_now) -> None:
         draw_card(surface, self.mu_card, C["white"], 15)
-        blit(surface, self.assets.sm, "Viscosidad aparente", C["muted"], (self.mu_card.x + 16, self.mu_card.y + 14), "topleft")
-        blit(surface, self.assets.lg, f"{mu_now:.2f} Pa·s", C["ink"], (self.mu_card.x + 16, self.mu_card.y + 40), "topleft")
+        blit(surface, self.assets.sm, "Viscosidad aparente", C["muted"], (self.mu_card.x + 16, self.mu_card.y + 12), "topleft")
+        blit(
+            surface,
+            self.assets.tiny,
+            f"eq {eq['mu']:.2f}",
+            C["muted"],
+            (self.mu_card.right - 12, self.mu_card.y + 14),
+            "topright",
+        )
+        blit(surface, self.assets.lg, f"{mu_now:.2f} Pa·s", C["ink"], (self.mu_card.x + 16, self.mu_card.y + 38), "topleft")
         inside = band["low"] <= mu_now <= band["high"] and mu_now > 0
         hint = "Dentro de la banda" if inside else f"Objetivo {band['low']:.1f}–{band['high']:.1f}"
         blit(
@@ -119,7 +126,6 @@ class MixStation(BaseScreen):
             self.assets.sm,
             hint,
             C["good"] if inside else C["warn"],
-            (self.mu_card.x + 16, self.mu_card.bottom - 16),
+            (self.mu_card.x + 16, self.mu_card.bottom - 14),
             "bottomleft",
         )
-        blit(surface, self.assets.tiny, f"Equilibrio {eq['mu']:.2f}", C["muted"], (self.mu_card.right - 16, self.mu_card.bottom - 16), "bottomright")

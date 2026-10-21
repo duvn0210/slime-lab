@@ -1,4 +1,3 @@
-# AI assisted development
 """Controles vectoriales de Slime Lab: tarjetas, botones, sliders, vaso y gráficas."""
 
 from __future__ import annotations

@@ -1,7 +1,6 @@
-# AI assisted development
 """Constantes globales de Slime Lab: ventana, paleta, rangos y bandas de calidad."""
 
-# Resolución de pantalla a la que se escala background.png.
+# Resolución de pantalla a la que se escala el fondo.
 WIDTH = 1024
 HEIGHT = 600
 FPS = 60
@@ -38,8 +37,9 @@ GAMMA_PER_RPM = 0.15
 GAMMA_MIN = 0.20
 
 # Transitorio de mezclado: μ(t) = μ_eq * (1 - exp(-t / τ)), con τ más corto a más RPM.
-MIX_TAU_BASE = 3.5
-MIX_TAU_RPM = 90.0
+# A RPM mínimas el τ no debe superar ~5 s: si no, la curva parece rota.
+MIX_TAU_BASE = 2.0
+MIX_TAU_RPM = 30.0
 
 # Bandas de control de calidad (Pa·s). Centros alineados con fórmulas intuitivas.
 VISCOSITY_BANDS = {

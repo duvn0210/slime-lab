@@ -1,4 +1,3 @@
-# AI assisted development
 """Bucle principal y máquina de estados de Slime Lab."""
 
 from __future__ import annotations

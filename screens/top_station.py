@@ -1,4 +1,3 @@
-# AI assisted development
 """Estación 4: decoración del slime y entrega del pedido."""
 
 from __future__ import annotations

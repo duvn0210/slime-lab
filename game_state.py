@@ -1,4 +1,3 @@
-# AI assisted development
 """Pedido activo, formulación, monedas y avance del servicio."""
 
 from __future__ import annotations

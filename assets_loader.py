@@ -1,4 +1,3 @@
-# AI assisted development
 """Dibuja el laboratorio, el avatar y una hoja de iconos recortada con subsurface."""
 
 from __future__ import annotations

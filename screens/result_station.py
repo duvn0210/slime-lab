@@ -1,4 +1,3 @@
-# AI assisted development
 """Estación 5: reporte de control de calidad."""
 
 from __future__ import annotations

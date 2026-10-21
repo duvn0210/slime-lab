@@ -1,4 +1,3 @@
-# AI assisted development
 """Estación 1: el cliente entrega el pedido."""
 
 from __future__ import annotations

@@ -1,5 +1,4 @@
 #!/bin/bash
-# AI assisted development
 cd "$(dirname "$0")"
 if [ ! -x .venv/bin/python ]; then
   echo "Falta el entorno. Desde esta carpeta:"

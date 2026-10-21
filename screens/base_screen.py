@@ -1,4 +1,3 @@
-# AI assisted development
 """Clase base de las estaciones y controles compartidos."""
 
 from __future__ import annotations

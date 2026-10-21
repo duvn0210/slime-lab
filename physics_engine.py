@@ -1,4 +1,3 @@
-# AI assisted development
 """Reología del slime: dilución estequiométrica, ley de potencia y puntuación."""
 
 from __future__ import annotations

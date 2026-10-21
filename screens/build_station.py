@@ -1,4 +1,3 @@
-# AI assisted development
 """Estación 2: formulación con sliders, colorante y probeta."""
 
 from __future__ import annotations

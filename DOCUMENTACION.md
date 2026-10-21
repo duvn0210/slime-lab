@@ -1,4 +1,3 @@
-<!-- AI assisted development -->
 # Slime Lab — qué es, cómo funciona y cómo seguirlo
 
 Documento de contexto para continuar el proyecto en **otro Cursor / otro dispositivo**.  
@@ -36,6 +35,24 @@ Dependencia real: solo `pygame>=2.5` (`requirements.txt`). El `.venv` no se vers
 
 En Cursor: **File → Open Folder** sobre `slime-lab` (no hace falta un `.sln`). Punto de entrada: `main.py`.
 
+**Visual Studio en Windows (sin Ubuntu / WSL):** instala [Python 3.12](https://www.python.org/downloads/) marcando *Add python.exe to PATH*, y en el instalador de Visual Studio el workload **Python development**. Luego:
+
+1. **File → Open → Folder** y elige la carpeta `slime-lab` (no hace falta crear un `.sln`).
+2. **View → Terminal**. En esa terminal de PowerShell:
+
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+```
+
+Si PowerShell bloquea el script de activación: `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
+
+3. En el Explorador de soluciones, clic derecho en `main.py` → **Set as Startup File**.
+4. Pulsa **F5** (o el botón Start). Debe abrirse una ventana de 1024×600.
+
+Si pide un intérprete, elige `.venv\Scripts\python.exe` de esta carpeta. No uses el perfil de WSL.
+
 ---
 
 ## 3. Flujo del jugador
@@ -68,7 +85,7 @@ settings.py          → constantes (no hardcodear magia en las pantallas)
 assets_loader.py     → fondo, sprites de cliente, iconos vectoriales
 ui_components.py     → botones candy, sliders, vaso/slime, gráficas
 screens/*.py         → una clase por estación (hereda BaseScreen)
-assets/              → PNG/JPG (fondo, clientes, mockups de referencia)
+assets/              → fondo del laboratorio y sprites de clientes
 ```
 
 **Regla de capas**
@@ -121,7 +138,7 @@ Baja: lo contrario.
 No aparece μ_eq de golpe:
 
 ```
-τ_mix = 3.5 + 90 / RPM
+τ_mix = 2.0 + 30 / RPM
 μ(t)  = μ_eq * (1 - exp(-t / τ_mix))
 ```
 
@@ -236,10 +253,6 @@ Cromo: pausa y volumen **abajo a la derecha**. Arriba: flechas blanca/coral de e
 | `screens/result_station.py` | Ticket QC, confeti, nuevo pedido. |
 | `screens/base_screen.py` | `BaseScreen`, `blit`, `fit_text`, reminder. |
 
-`fix_assets.py` es un script viejo de Unsplash; **no** es el pipeline actual de arte.
-
-Atribución: todo `.py` / `.md` / `.sh` creado o editado por IA lleva comentario de cabecera (`# AI assisted development` o `<!-- AI assisted development -->`). JSON no.
-
 ---
 
 ## 9. Estado del receta y trampas de implementación
@@ -304,7 +317,6 @@ En el otro dispositivo: `git clone` o `git pull` y abrir la carpeta en Cursor. E
 - Audio (clics, motor MIX, fanfarria EXCELENTE).
 - Persistencia de récord/monedas.
 - Más pedidos con historia o dificultad.
-- Quitar mockups JPG de `assets/` si ya no se usan.
 - Empaquetar (PyInstaller) para Windows.
 
 La jugabilidad núcleo (ORDER→BUILD→MIX→TOP→RESULT + física SET B) **está completa**.
