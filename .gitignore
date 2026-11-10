@@ -1,4 +1,5 @@
 .venv/
+.audio-libs/
 __pycache__/
 *.pyc
 *Zone.Identifier

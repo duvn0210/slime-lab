@@ -19,9 +19,14 @@ Para jugar: python main.py   (o el botón F5 en Visual Studio)
 
 from __future__ import annotations
 
+from audio_boot import prepare_linux_audio
+
+prepare_linux_audio()
+
 import pygame
 
 from assets_loader import AssetLoader
+from sfx import Sfx
 from game_state import GameState
 from physics_engine import SlimePhysics
 from screens.base_screen import blit, draw_button, draw_star, panel, wrap_text
@@ -54,7 +59,9 @@ class SlimeLab:
 
     def __init__(self) -> None:
         """Abre la ventana, carga fotos, crea la calculadora, la libreta y las 5 pantallas."""
+        pygame.mixer.pre_init(44100, -16, 2, 1024)
         pygame.init()
+        self.sfx = Sfx()
         pygame.display.set_caption("Slime Lab")
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         self.clock = pygame.time.Clock()
@@ -162,9 +169,12 @@ class SlimeLab:
         if event.type == pygame.QUIT:
             self.running = False
             return
-        if event.type == pygame.KEYDOWN:
+        if event.type == pygame.KEYDOWN and not getattr(event, "repeat", False):
+            self.sfx.play("key", self.sound_on)
             self._on_key(event)
             return
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            self.sfx.play("click", self.sound_on)
         if self.paused:
             self._on_pause_click(event)
             return
@@ -211,6 +221,7 @@ class SlimeLab:
             return True
         if self.sound_rect.collidepoint(pos):
             self.sound_on = not self.sound_on
+            self.sfx.set_enabled(self.sound_on)
             return True
         if self.prev_rect.collidepoint(pos):
             self._back()
@@ -373,7 +384,7 @@ class SlimeLab:
         pygame.draw.rect(self.screen, C["white"], (x + 3, y - 8, 5, 16), border_radius=2)
 
     def _speaker(self, center, enabled) -> None:
-        """Dibuja el parlante. Si el sonido está apagado, le pone una rayita. Aún no hay audio real."""
+        """Dibuja el parlante. Si el sonido está apagado, le pone una rayita."""
         x, y = center
         pygame.draw.polygon(
             self.screen,

@@ -421,37 +421,116 @@ def _draw_slime(body, liquid, color, time, mixing, angle, viscosity, rpm, toppin
             _star(body, sx, sy, pulse, (*colors[i], 255), spin=spin, outline=(40, 16, 56, 255))
 
 
-def draw_chart(surface, rect, title, series, x_max, y_max, color, assets, band=None, dashed=None) -> None:
-    """Dibuja una gráfica. En MIX, band es el verde del cliente y dashed la línea de puntos del tope."""
+def axis_scale(vmax: float, divisions: int = 4) -> tuple[float, list[float]]:
+    """Redondea el máximo del eje a un número fácil y devuelve las rayitas (0, paso, …)."""
+    vmax = max(float(vmax), 1e-6)
+    raw = vmax / max(1, divisions)
+    magnitude = 10 ** math.floor(math.log10(raw))
+    step = magnitude
+    for mult in (1, 2, 2.5, 5, 10):
+        if mult * magnitude >= raw * 0.999:
+            step = mult * magnitude
+            break
+    top = step * math.ceil((vmax * 1.02) / step)
+    count = int(round(top / step))
+    return top, [i * step for i in range(count + 1)]
+
+
+def _tick_label(value: float) -> str:
+    """Número corto para una rayita del eje, sin ceros de más."""
+    if abs(value) < 1e-9:
+        return "0"
+    if abs(value) >= 10:
+        return f"{value:.0f}"
+    if abs(value) >= 1:
+        return f"{value:.1f}".rstrip("0").rstrip(".")
+    return f"{value:.2f}".rstrip("0").rstrip(".")
+
+
+def draw_chart(
+    surface,
+    rect,
+    title,
+    series,
+    x_max,
+    y_max,
+    color,
+    assets,
+    band=None,
+    dashed=None,
+    *,
+    x_label: str = "",
+    y_label: str = "",
+    marker=None,
+    vline=None,
+) -> None:
+    """
+    Dibuja una gráfica con ejes, números y unidades.
+    band = franja verde del pedido. dashed = línea horizontal (el equilibrio).
+    vline = línea vertical (tu velocidad de corte). marker = el punto de ahora.
+    """
     draw_card(surface, rect, C["white"], 15, (220, 210, 230))
-    title_img = assets.md.render(title, True, C["ink"])
-    surface.blit(title_img, (rect.x + 16, rect.y + 12))
-    plot = pygame.Rect(rect.x + 46, rect.y + 48, rect.w - 64, rect.h - 72)
-    pygame.draw.rect(surface, (246, 248, 252), plot, border_radius=8)
-    pygame.draw.rect(surface, (180, 176, 196), plot, 1, border_radius=8)
+    title_img = assets.sm.render(title, True, C["ink"])
+    surface.blit(title_img, (rect.x + 44, rect.y + 8))
+    plot = pygame.Rect(rect.x + 52, rect.y + 30, rect.w - 66, rect.h - 62)
+    pygame.draw.rect(surface, (246, 248, 252), plot, border_radius=6)
     x_max = max(float(x_max), 0.001)
     y_max = max(float(y_max), 0.001)
+
+    def x_of(value: float) -> int:
+        return plot.x + int(plot.w * max(0.0, min(1.0, value / x_max)))
+
+    def y_of(value: float) -> int:
+        return plot.bottom - int(plot.h * max(0.0, min(1.0, value / y_max)))
+
+    for tick in axis_scale(y_max, 4)[1]:
+        if tick > y_max:
+            continue
+        y = y_of(tick)
+        pygame.draw.line(surface, (226, 222, 234), (plot.x, y), (plot.right, y), 1)
+        label = assets.tiny.render(_tick_label(tick), True, C["muted"])
+        surface.blit(label, label.get_rect(midright=(plot.x - 4, y)))
+    for tick in axis_scale(x_max, 4)[1]:
+        if tick > x_max:
+            continue
+        x = x_of(tick)
+        pygame.draw.line(surface, (226, 222, 234), (x, plot.y), (x, plot.bottom), 1)
+        label = assets.tiny.render(_tick_label(tick), True, C["muted"])
+        surface.blit(label, label.get_rect(midtop=(x, plot.bottom + 2)))
+    pygame.draw.rect(surface, (120, 110, 140), plot, 1, border_radius=6)
+
     if band is not None:
         low, high = band
-        y0 = plot.bottom - int(plot.h * max(0.0, min(1.0, low / y_max)))
-        y1 = plot.bottom - int(plot.h * max(0.0, min(1.0, high / y_max)))
-        band_rect = pygame.Rect(plot.x + 1, min(y0, y1), plot.w - 2, abs(y1 - y0) or 2)
+        y0 = y_of(low)
+        y1 = y_of(high)
+        band_rect = pygame.Rect(plot.x + 1, min(y0, y1), plot.w - 2, max(2, abs(y1 - y0)))
         layer = pygame.Surface(band_rect.size, pygame.SRCALPHA)
         layer.fill((76, 175, 80, 70))
         surface.blit(layer, band_rect.topleft)
     if dashed is not None:
-        y = plot.bottom - int(plot.h * max(0.0, min(1.0, dashed / y_max)))
+        y = y_of(dashed)
         for x in range(plot.x + 4, plot.right - 4, 10):
-            pygame.draw.line(surface, (120, 90, 160), (x, y), (x + 5, y), 2)
+            pygame.draw.line(surface, (120, 90, 160), (x, y), (min(x + 5, plot.right - 2), y), 2)
+    if vline is not None:
+        x = x_of(vline)
+        for y in range(plot.y + 4, plot.bottom - 4, 10):
+            pygame.draw.line(surface, (90, 110, 170), (x, y), (x, min(y + 5, plot.bottom - 2)), 2)
     points = []
     for x_val, y_val in series:
-        px = plot.x + int(plot.w * max(0.0, min(1.0, x_val / x_max)))
-        py = plot.bottom - int(plot.h * max(0.0, min(1.0, y_val / y_max)))
-        points.append((px, py))
+        points.append((x_of(x_val), y_of(y_val)))
     if len(points) >= 2:
         pygame.draw.lines(surface, color, False, points, 3)
-    axis = assets.tiny.render("0", True, C["muted"])
-    surface.blit(axis, (plot.x - 16, plot.bottom - 8))
+    if marker is not None:
+        px, py = x_of(marker[0]), y_of(marker[1])
+        pygame.draw.circle(surface, C["white"], (px, py), 6)
+        pygame.draw.circle(surface, (210, 40, 90), (px, py), 5)
+        pygame.draw.circle(surface, C["white"], (px, py), 5, 2)
+    if y_label:
+        turned = pygame.transform.rotate(assets.tiny.render(y_label, True, C["ink"]), 90)
+        surface.blit(turned, turned.get_rect(center=(rect.x + 14, plot.centery)))
+    if x_label:
+        caption = assets.tiny.render(x_label, True, C["ink"])
+        surface.blit(caption, caption.get_rect(midtop=(plot.centerx, rect.bottom - 16)))
 
 
 def _star(surface, cx, cy, radius, color, spin=0.0, outline=None) -> None:

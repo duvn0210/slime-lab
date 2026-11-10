@@ -131,20 +131,31 @@ class SlimePhysics:
         progreso = 1.0 - math.exp(-max(0.0, t) / tau_mix)
         return mu_eq * progreso, tau_mix
 
-    def curva_esfuerzo(self, polymer: float, agente: float, puntos: int = 40) -> list[tuple[float, float]]:
-        """
-        La gráfica de la derecha en MIX. No dice si ganaste o perdiste.
-        Solo muestra: si agitaras más o menos rápido, cuánta “resistencia” tendría el slime.
-        """
+    def _barrido_corte(self, polymer: float, agente: float, puntos: int) -> tuple[dict, list[float]]:
+        """K y n de la receta, y una lista de γ desde las RPM mínimas hasta las máximas."""
         estado = self.estado_reologico(polymer, agente, RPM_MIN)
-        curva = []
         pasos = max(2, puntos)
+        gammas = []
         for i in range(pasos):
             rpm = RPM_MIN + (RPM_MAX - RPM_MIN) * i / (pasos - 1)
-            gamma = self.velocidad_corte(rpm)
-            tau = self.esfuerzo_corte(estado["K"], gamma, estado["n"])
-            curva.append((gamma, tau))
-        return curva
+            gammas.append(self.velocidad_corte(rpm))
+        return estado, gammas
+
+    def curva_esfuerzo(self, polymer: float, agente: float, puntos: int = 40) -> list[tuple[float, float]]:
+        """
+        τ contra γ. Sirve para comparar cuánta fuerza pide el slime
+        si el agitador girara más lento o más rápido. No es la nota.
+        """
+        estado, gammas = self._barrido_corte(polymer, agente, puntos)
+        return [(gamma, self.esfuerzo_corte(estado["K"], gamma, estado["n"])) for gamma in gammas]
+
+    def curva_viscosidad(self, polymer: float, agente: float, puntos: int = 40) -> list[tuple[float, float]]:
+        """
+        La curva de flujo de MIX: viscosidad aparente contra velocidad de corte.
+        Así se compara, en la misma receta, qué pasaría con más o menos RPM.
+        """
+        estado, gammas = self._barrido_corte(polymer, agente, puntos)
+        return [(gamma, self.viscosidad_aparente(estado["K"], gamma, estado["n"])) for gamma in gammas]
 
     def nivel_visual(self, polymer: float, agente: float) -> float:
         """Qué tan lleno se ve el vaso. Es solo dibujo: no entra en la nota."""
